@@ -21,9 +21,14 @@ interface that utilizes services offered by the server.
 This integration project aims to connect the following entities
 in the infrastructure at the University of Innsbruck:
 
-  1. The study information system (implemented by VIS).
-  1. The recorders (hardware encoders, usually SMPs) in lecture halls.
-  1. The terminals (stationary PCs) in lecture halls.
-  1. Archive (implemented by Opencast)
+  1. The course booking database (implemented by TVR).
+  1. The personnel database (implemented by VIS).
+  1. The recorders (hardware encoders, usually SMP 351s) in lecture halls.
+  1. The terminals (stationary computers) in lecture halls.
+  1. The media archive (implemented by Opencast).
 
+# Build
 
+This project is a multi-project Gradle build.
+To build mcs-server, run `gradle build`. The RPMs will land under `mcs-server/build/distributions`.
+The Apache Karaf KAR files are created per assembly under `mcs-server/build/assemblies/<name>/kar`.
