@@ -1,0 +1,59 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+//configurations {
+//    fakeArtifacts.extendsFrom testCompile
+//}
+//task testJar(type: Jar) {
+//    classifier "test"
+//    from sourceSets.test.output
+//}
+//artifacts {
+//    fakeArtifacts testJar
+//}
+
+dependencies {
+    implementation project(':common-api')
+    implementation project(':roomrepo-api')
+    implementation project(':person-api')
+    implementation project(':recorderservice-api')
+    implementation project(':executorservice-api')
+    implementation project(':functional')
+    implementation project(':loginservice-api')
+    implementation project(':sshsessionmanager-api')
+    implementation project(':bookingrepo-api')
+
+    implementation EXTERNAL_LIBS['io.swagger.core.v3:swagger-annotations']
+    compileOnly EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-annotations']
+    compileOnly EXTERNAL_LIBS["org.slf4j:slf4j-api"]
+    implementation EXTERNAL_LIBS["org.apache.logging.log4j:log4j-slf4j-impl"]
+    compileOnly EXTERNAL_LIBS["org.osgi:org.osgi.service.component.annotations"]
+    implementation EXTERNAL_LIBS['org.yaml:snakeyaml'] // TODO abstract away dep in implementation
+
+
+    testImplementation EXTERNAL_LIBS['org.mockito:mockito-core']
+    testImplementation EXTERNAL_LIBS['org.yaml:snakeyaml']
+    testImplementation project(path: ':common-impl')
+    testImplementation project(path: ':common-impl', configuration: 'testArtifacts')
+    testImplementation project(path: ':sshsessionmanager-impl', configuration: 'testArtifacts')
+    testImplementation project(path: ':executorservice-impl', configuration: 'testArtifacts')
+    testImplementation EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-api"]
+    testImplementation EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-params"]
+    testRuntime EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-engine"]
+    testImplementation EXTERNAL_LIBS["org.assertj:assertj-core"]
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.roomrepo.impl
+-sources: true
+'''
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags 'disabled'
+        excludeTags 'unfinished'
+    }
+}

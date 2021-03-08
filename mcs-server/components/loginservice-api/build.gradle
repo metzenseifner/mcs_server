@@ -1,0 +1,18 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    implementation project(':person-api')
+    implementation project(':roomrepo-api')
+    implementation project(':functional')
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.loginservice.api
+-sources: true
+'''
+}

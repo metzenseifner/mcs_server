@@ -1,0 +1,31 @@
+---
+rooms:
+  avstudio:
+    name: "AV Studio"
+    recorders:
+      r_avstudio_01:
+        name: "Main"
+        type: "smp351"
+        target:
+          host: "138.232.11.2"
+          port: "22023"
+          username: "test"
+          password: "test"
+      r_avstudio_02:
+        name: "Side"
+        type: "smp351"
+        target:
+          host: "138.232.11.2"
+          port: "22023"
+          username: "test"
+          password: "test"
+    terminals:
+      t_nm-pc11:
+        name: "Jonathan L. Komar"
+        target: "138.232.11.10"
+      t_nm-pc12:
+        name: "Anna Saxer"
+        target: "138.232.11.12"
+
+  hs01:
+    recorders:

@@ -1,0 +1,29 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    implementation project(':common-api')
+    implementation project(':bookingrepo-api')
+    implementation project(':person-api')
+    implementation project(':functional')
+
+    implementation EXTERNAL_LIBS['com.fasterxml.jackson.dataformat:jackson-dataformat-xml']
+    implementation EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-annotations']
+    implementation EXTERNAL_LIBS['javax.xml.bind:jaxb-api']
+    implementation EXTERNAL_LIBS['org.apache.cxf:cxf-rt-rs-client']
+    compileOnly EXTERNAL_LIBS["org.slf4j:slf4j-api"]
+    implementation EXTERNAL_LIBS["org.apache.logging.log4j:log4j-slf4j-impl"]
+    compileOnly EXTERNAL_LIBS["org.osgi:org.osgi.service.component.annotations"]
+    compileOnly EXTERNAL_LIBS["org.osgi:org.osgi.service.component"]
+
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.bookingrepo.impl
+-sources: true
+'''
+}

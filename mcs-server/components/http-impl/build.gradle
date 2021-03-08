@@ -1,0 +1,60 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+dependencies {
+    implementation project(':executorservice-api')
+    implementation project(':functional')
+    implementation project(':http-api')
+    implementation project(':roomrepo-api')
+    implementation project(':person-api')
+    implementation project(':common-api')
+    implementation project(':recorderservice-api')
+    implementation project(':loginservice-api')
+    implementation project(':bookingrepo-api')
+
+    implementation group: 'org.json', name: 'json', version: '20201115'
+    compileOnly EXTERNAL_LIBS['io.swagger.core.v3:swagger-annotations']
+    compileOnly EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-annotations']
+    //compileOnly EXTERNAL_LIBS['javax.ws.rs:javax.ws.rs-api']
+    //compileOnly group: 'org.apache.servicemix.specs', name: 'org.apache.servicemix.specs.jaxrs-api-2.1', version: '2.9.1'
+    compileOnly EXTERNAL_LIBS['org.apache.cxf:cxf-rt-frontend-jaxrs']
+    compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
+    implementation EXTERNAL_LIBS["com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider"]
+    compile EXTERNAL_LIBS['javax.annotation:javax.annotation-api']
+    compileOnly EXTERNAL_LIBS["org.slf4j:slf4j-api"]
+    implementation EXTERNAL_LIBS["org.apache.logging.log4j:log4j-slf4j-impl"]
+    implementation EXTERNAL_LIBS["org.osgi:org.osgi.core"]
+    compileOnly EXTERNAL_LIBS["org.osgi:org.osgi.service.component.annotations"]
+    //implementation EXTERNAL_LIBS["org.apache.cxf:cxf-rt-rs-service-description-openapi-v3"]
+    //implementation group: 'org.apache.cxf', name: 'cxf-rt-rs-service-description-swagger', version: '3.1.7'
+    implementation EXTERNAL_LIBS["com.fasterxml.jackson.datatype:jackson-datatype-jsr310"]
+
+    testImplementation EXTERNAL_LIBS['org.apache.cxf:cxf-rt-frontend-jaxrs']
+    testImplementation project(path: ':common-impl', configuration: 'testArtifacts')
+    testImplementation project(path: ':roomrepo-impl', configuration: 'testArtifacts')
+    testImplementation project(path: ':person-impl', configuration: 'testArtifacts')
+    testImplementation project(path: ':bookingrepo-impl', configuration: 'testArtifacts')
+    testImplementation EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-api"]
+    testImplementation EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-params"]
+    testRuntime EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-engine"]
+    testImplementation EXTERNAL_LIBS["org.assertj:assertj-core"]
+}
+
+// compileJava.options.compilerArgs += ["-Djavax.ws.rs.ext.RuntimeDelegate=org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl"]
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.http.impl
+-exportcontents: at.ac.uibk.mcsconnect.http.impl.endpoint
+
+-sources: true
+'''
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags 'disabled'
+        excludeTags 'unfinished'
+    }
+}

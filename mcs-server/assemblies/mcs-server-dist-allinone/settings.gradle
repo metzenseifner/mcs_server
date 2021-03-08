@@ -1,0 +1,16 @@
+pluginManagement { // must be first block in file (or as init script)
+    plugins {
+        id 'java' apply false
+        id 'idea' apply false
+        id 'mcs.convention.plugin.standard' version "${mcsPluginVersion}"
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+file('../../components').eachDir { dir ->
+    include dir.name
+    project(":${dir.name}").projectDir = dir
+}

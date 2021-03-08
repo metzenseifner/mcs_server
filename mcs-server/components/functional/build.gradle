@@ -1,0 +1,28 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    implementation EXTERNAL_LIBS['org.yaml:snakeyaml']
+
+    testImplementation EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-api"]
+    testImplementation EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-params"]
+    testRuntime EXTERNAL_LIBS["org.junit.jupiter:junit-jupiter-engine"]
+    testImplementation EXTERNAL_LIBS["org.assertj:assertj-core"]
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.functional.*
+-sources: true
+'''
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags 'disabled'
+        excludeTags 'unfinished'
+    }
+}

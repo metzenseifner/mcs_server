@@ -1,0 +1,43 @@
+---
+rooms:
+  avstudio:
+    name: "AV Studio"
+    recorders:
+      r_avstudio_01:
+        name: "Main"
+        type: "smp351"
+        target:
+          host: "138.232.11.205"
+          port: "22023"
+          username: "test"
+          password: ""
+      r_avstudio_02:
+        name: "Side"
+        type: "smp351"
+        target:
+          host: "138.232.11.2"
+          port: "22023"
+          username: "test"
+          password: ""
+    terminals:
+      t_nm-pc11:
+        name: "Jonathan L. Komar"
+        target: "138.232.11.10"
+      t_nm-pc12:
+        name: "Anna Saxer"
+        target: "138.232.11.12"
+      t_c102-jr:
+        name: "Jacob Rief"
+        target: "138.232.11.201"
+      t_nm-pc07:
+        name: "Besprechungstisch DMLT"
+        target: "138.232.11.7"
+      t_c102-dh1:
+        name: "Daniel Haag"
+        target: "138.232.11.6"
+      t_nm-mc09:
+        name: "Barbara Hoffmann"
+        target: "138.232.11.9"
+      t_c102-jrvpn:
+        name: "Jacob Rief VPN"
+        target: "172.27.8.124"

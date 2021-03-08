@@ -1,0 +1,24 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    implementation project(':executorservice-api')
+
+    compileOnly EXTERNAL_LIBS["org.slf4j:slf4j-api"]
+    implementation EXTERNAL_LIBS["org.apache.logging.log4j:log4j-slf4j-impl"]
+
+    //compileOnly EXTERNAL_LIBS["org.osgi:org.osgi.core"]
+    compileOnly EXTERNAL_LIBS["org.osgi:org.osgi.service.component.annotations"]
+
+    testImplementation EXTERNAL_LIBS['org.mockito:mockito-core']
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.executorservice.impl
+-sources: true
+'''
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=MCS Connect Server
+Documentation=
+After=local-fs.target
+After=network.target
+After=remote-fs.target
+
+[Service]
+ExecStart=/usr/share/mcs/bin/start-mcs server
+ExecReload=/usr/share/mcs/bin/stop-mcs
+Restart=always
+User=mcs
+
+[Install]
+WantedBy=multi-user.target

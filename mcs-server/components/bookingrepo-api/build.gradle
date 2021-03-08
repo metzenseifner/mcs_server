@@ -1,0 +1,15 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+dependencies {
+    implementation project(':person-api')
+    implementation project(':functional')
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.bookingrepo.api
+-sources: true
+'''
+}

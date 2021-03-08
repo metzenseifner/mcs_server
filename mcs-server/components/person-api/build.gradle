@@ -1,0 +1,18 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    implementation project(':functional')
+    implementation project(':common-api')
+    compileOnly EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-annotations']
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.person.api
+-sources: true
+'''
+}

@@ -1,0 +1,21 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+dependencies {
+    implementation project(':common-api')
+    //implementation project(':roomrepo-api') // causes circular dep
+    implementation project(':functional')
+    implementation project(':sshsessionmanager-api')
+    implementation project(':executorservice-api')
+
+    compileOnly EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-annotations']
+    compileOnly EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-databind']
+}
+
+jar {
+    bnd '''
+-exportcontents: "at.ac.uibk.mcsconnect.recorderservice.api"
+-sources: true
+'''
+}

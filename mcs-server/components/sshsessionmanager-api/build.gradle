@@ -1,0 +1,14 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+dependencies {
+    implementation project(':common-api')
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.sshsessionmanager.api
+-sources: true
+'''
+}

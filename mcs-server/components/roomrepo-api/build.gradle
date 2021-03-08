@@ -1,0 +1,21 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    implementation project(':common-api')
+    implementation project(':person-api')
+    implementation project(':recorderservice-api')
+    implementation project(':bookingrepo-api')
+    implementation project(':functional')
+    compileOnly EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-annotations']
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.roomrepo.api
+-sources: true
+'''
+}

@@ -1,0 +1,110 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+// disable default jar for this project
+jar.enabled = false
+project.version = rootProject.version
+
+/**
+ * Dependency configuration is a FileCollection that
+ * can be used to group the files this project depends on.
+ *
+ * Here we define out own configuration for the components.
+ */
+configurations {
+    component {
+        transitive true
+    }
+    karafDeployment {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+}
+
+afterEvaluate { // necessary for version, and because the karaf plugin adds artifacts after project evaluation
+//associating the task that produces the artifact with the configuration
+    artifacts {
+        karafDeployment(file("$buildDir/karaf/kar/${name}-${version}.kar")) { // version loads to quickly
+            //type 'kar'
+            builtBy 'generateKar'
+        }
+    }
+}
+
+/**
+ * Add all subprojects that should be included in this distribution here.
+ *
+ * A project dependency is a special form of an execution dependency.
+ * It causes the other project to be built first and adds the jar with
+ * the classes of the other project to the classpath.
+ *
+ */
+dependencies {
+    rootProject.subprojects.findAll {
+        !it.path.contains("assemblies")
+    }.each {
+        component (it)
+    }
+}
+
+tasks.build.dependsOn "copyJars"
+
+task copyJars(type: Copy) {
+    group "build"
+    from configurations.component.files
+    into "$buildDir/lib"
+}
+
+karaf {
+    features {
+        name = "${project.name}"
+        version = "${project.version}"
+        xsdVersion = '1.3.0'
+
+        feature {
+            name = "$project.name"
+            version = "$project.version"
+            configurations "component"
+            feature 'karaf-system-config'
+        }
+
+        feature {
+            name = 'karaf-requirements'
+            description = 'A collection of required OSGI environment features.'
+
+            //repository "mvn:org.apache.cxf.karaf/apache-cxf/" + versions.get('org.apache.cxf') + "/xml/features"
+            repository "mvn:org.apache.aries.jax.rs/org.apache.aries.jax.rs.features/1.0.6/xml"
+            repository "mvn:org.apache.cxf.dosgi/cxf-dosgi/2.3.0/xml/features"
+            repository "mvn:org.apache.aries.rsa/rsa-features/1.14.0/xml/features"
+            // Remote Service Admin needed for cxf-dosgi: service.exported.interfaces=*
+            feature 'deployer'
+            feature 'config'
+            feature 'system'
+            feature 'scr'
+            feature 'cxf-dosgi-provider-rs' // NORMALL just this but cannot in karafv4.3.0 because of cxf-http-jetty
+        }
+        feature {
+            name = "karaf-system-config"
+            description = "Hack to add RuntimeDelegate before installing CXF"
+            configFile {
+                filename = '${karaf.etc}/custom.system.properties'
+                file = file("config/custom.system.properties")
+                uri      = "mvn:at.ac.uibk.mcsconnect.files/${project.version}/cfg/features"
+                override = true // (optional) Override existing configuration files within karaf. False by default
+            }
+            feature 'karaf-requirements'
+        }
+
+    }
+    // Enable generation of an OSGi bundles repository, laid out as a Maven 2 repository based on
+    // the features defined above. This can be used to provision the 'system' directory of a
+    // custom Karaf distribution.
+    // To generate repo use generateRepo, assemble or install
+    repo {
+    }
+    // enable creation of kar for experimenting. This should ideally only be enabled in assemblies.
+    kar {
+        // seeting archiveName should null out archiveVersion
+        archiveName = "$name"
+    }
+}

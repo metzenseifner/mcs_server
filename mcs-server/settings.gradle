@@ -1,0 +1,35 @@
+// include many projects whose project dirs do not match the standardlogical project paths
+
+/**
+ * A plugins {} block inside pluginManagement {} allows all plugin versions
+ * for the build to be defined in a single location. Plugins can then be
+ * applied by id to any build script via the plugins {} block.
+ * pluginManagement.plugins {} does not have the same constrained syntax as the build script plugins {} block.
+ * This allows plugin versions to be taken from gradle.properties, or loaded via another mechanism.
+ */
+pluginManagement { // must be first block in file (or as init script)
+    plugins {
+        id 'java' apply false
+        id 'idea' apply false
+        id 'mcs.convention.plugin.standard' version "${mcsPluginVersion}"
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+// TODO add components prefix
+file('components').eachDir { dir ->
+    include dir.name
+    project(":${dir.name}").projectDir = dir
+}
+file('assemblies').eachDir { dir ->
+    include 'assemblies:' + dir.name
+    project(":assemblies:${dir.name}").projectDir = dir
+    //project(":${dir.name}").extra.set("assembly", true)
+}
+
+// Define the root project name in the settings file: The ´rootProject.name´ effectively assigns a name to the build as a whole, which is used in reports like build scans.
+rootProject.name = 'at.ac.uibk.mcsconnect'

@@ -1,0 +1,21 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    compileOnly EXTERNAL_LIBS['io.swagger.core.v3:swagger-annotations']
+    implementation EXTERNAL_LIBS['javax.ws.rs:javax.ws.rs-api']
+    implementation EXTERNAL_LIBS["com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider"]
+
+    //compile EXTERNAL_LIBS['javax.annotation:javax.annotation-api']
+    compileOnly EXTERNAL_LIBS['org.apache.cxf:cxf-rt-frontend-jaxrs'] // replaced javax.annotation-api for MessageContext
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.http.api
+-sources: true
+'''
+}

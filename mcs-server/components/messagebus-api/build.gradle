@@ -1,0 +1,13 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+dependencies {
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.messagebus.api
+-sources: true
+'''
+}

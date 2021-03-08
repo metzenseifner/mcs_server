@@ -1,0 +1,444 @@
+// READ https://github.com/bndtools/bnd/blob/master/biz.aQute.bnd.gradle/README.md#gradle-plugin-for-non-bnd-workspace-builds
+
+
+/**
+ * If you have a multi-project build, you probably want to apply plugins to some or all of
+ * the subprojects in your build, but not to the root project. The default behavior of the
+ * plugins {} block is to immediately resolve and apply the plugins. But, you can use the
+ * apply false syntax to tell Gradle not to apply the plugin to the current project and
+ * then use the plugins {} block without the version in subprojects' build scripts:
+ */
+plugins {
+    id 'java'
+    id "nebula.ospackage" version "8.5.6"
+    id 'mcs.convention.plugin.standard' version "${mcsPluginVersion}"
+}
+final gitBranch = "git rev-parse --abbrev-ref HEAD".execute().text.trim()
+final gitTag = "git describe HEAD".execute().text.trim() // git describe HEAD
+final gitCommitIdShort = "git rev-parse --short=10 HEAD".execute().text.trim()
+final SNAPSHOT_OR_RELEASE = project.hasProperty("release") ? "RELEASE" : "SNAPSHOT"
+
+//project.version = "${gitTag}-${gitBranch}-${gitCommitIdShort}-${SNAPSHOT_OR_RELEASE}"
+project.version = "${gitTag}-branch-${gitBranch}-commit-${gitCommitIdShort}"//-${SNAPSHOT_OR_RELEASE}"
+
+// disable default jar for this project
+jar.enabled = false
+
+evaluationDependsOnChildren()
+def tar_to_basename = { it.replaceFirst('\\.tar\\.gz', '') }
+
+// Makes sense to contain projects here
+def karaf_version = "4.2.10"
+def karaf_tar_file_name = "apache-karaf-${karaf_version}.tar.gz"
+def karaf_expanded_dir = tar_to_basename(karaf_tar_file_name)
+def karaf_src_dir = "${project.projectDir}/karaf/"
+def karaf_tar_file = "${karaf_src_dir}/${karaf_tar_file_name}"
+def karaf_base_dir = "$project.buildDir/karaf"
+
+
+// Collect assemblies into set
+def setOfAssembledAssemblyFiles = files(subprojects.findAll {
+    it.path.contains("assemblies:")
+}.collect { file("$rootProject.buildDir/assemblies/$it.name") })
+
+
+/**
+ * Dependency configuration is a FileCollection that
+ * can be used to group the files this project depends on.
+ *
+ * Here we define out own configuration for the assemblies.
+ */
+configurations {
+    assemblyProducer
+    karafSource
+}
+
+/**
+ * Add all subprojects that should be included in this distribution here.
+ *
+ * A project dependency is a special form of an execution dependency.
+ * It causes the other project to be built first and adds the jar with
+ * the classes of the other project to the classpath.
+ *
+ */
+dependencies {
+    subprojects.findAll {
+        // this includes ":assemblies" and ":assemblies:assembly"
+        it.projectDir.path.contains("assemblies:")
+    }.each {
+        assemblyProducer project(path: it.path, configuration: 'karafDeployment')
+    }
+
+    assemblyProducer project(path: ':assemblies:mcs-server-dist-allinone', configuration: 'karafDeployment')
+
+    karafSource fileTree("karaf") {
+//File dependencies are not included in the published dependency descriptor for your project.
+        builtBy 'copyKarafTar'
+    }
+
+    karafSource fileTree(dir: "$buildDir/assemblies", includes: ['/**/*.kar']) {
+        builtBy 'collectAssemblies'
+    }
+}
+
+
+//evaluationDependsOnChildren()
+task artifacts {
+    group = "Help"
+    description = "Displays the artifacts associated with each configuration of " + project
+    doFirst {
+        configurations.findAll().each { config ->
+            println "${config}:"
+            config.allArtifacts.getFiles().each { file -> println "" + file }
+            println ' '
+        }
+    }
+}
+
+// COLLECT ALL DEPENDENCIES UNDER $buildDir/assemblies/<assemblyname>
+//build.dependsOn 'collectAssemblies'
+build.dependsOn 'assembleAssemblies', setOfAssembledAssemblyFiles.collect { it.name }
+
+task assembleAssemblies(group: 'karaf') {
+    dependsOn 'collectAssemblies', 'expandKarafTar', 'processAssemblies', 'copyKarafResources'
+    description 'Do all tasks that create MCS distributions for each assembly.'
+    outputs.upToDateWhen { false }
+}
+
+task collectAssemblies(group: 'build') {
+    dependsOn configurations.assemblyProducer
+    inputs.files(configurations.assemblyProducer)
+
+    // Collect assemblies into set
+    def setOfAssemblyProjects = subprojects.findAll {
+        it.path.contains("assemblies:")
+    }.collect()
+
+    def setOfAssemblyPaths = setOfAssemblyProjects.collect { it.projectDir }
+    setOfAssemblyPaths.forEach { outputs.dir("$rootProject.buildDir/assemblies/$it.name") }
+
+    doLast {
+        // process set
+        setOfAssemblyProjects.forEach {
+            println "Collecting subproject: " + it.projectDir
+            def source = "${it.buildDir}/karaf"
+            def target = "$rootProject.buildDir/assemblies/$it.name"
+            copy {
+                from source
+                into target
+            }
+
+        }
+    }
+}
+
+
+task expandKarafTar(type: DefaultTask, group: "karaf") {
+    description "Extracts karaf tar and makes necessary changes needed for MCS common to all assemblies."
+
+    // if file changes, then no longer UP-TO-DATE
+    inputs.file("$karaf_tar_file")
+    outputs.dir("${karaf_base_dir}")
+
+    doLast {
+        println("$project.buildDir")
+        println("$karaf_tar_file")
+        copy {
+            from tarTree("$karaf_tar_file")
+            into "$karaf_base_dir"
+        }
+    }
+}
+
+task copyKarafResources(group: "karaf") {
+    description "Copies extra resources needed for a Karaf setup."
+
+    inputs.dir("$karaf_src_dir/resources")
+    outputs.dir("${karaf_base_dir}")
+
+    doLast {
+        copy {
+            from "$karaf_src_dir/resources"
+            into "$karaf_base_dir"
+        }
+    }
+}
+
+task processAssemblies(group: 'karaf') {
+    dependsOn "expandKarafTar", "collectAssemblies"
+    description "Creates distributions in dist directories of each assembly and makes changes to the upstream karaf files."
+
+    // Function FileCollection -> File -> File
+    def makeDistribution = { karafsrc, assemblyPath ->
+        def dist_path_component = "dist"
+
+        copy {
+            println "makeDistribution from: " + karafsrc.files
+
+            from karafsrc
+            into "$assemblyPath/$dist_path_component"
+
+            includeEmptyDirs = false
+            // because eachFile renames file paths and dir structure is copied as is unnecessarily
+
+            eachFile {
+                it.path = it.path.replaceFirst("^$karaf_expanded_dir" + File.separator + '(.*)', '$1')
+            }
+
+            eachFile { FileCopyDetails fileCopyDetails ->
+                if (fileCopyDetails.name == "karaf" || fileCopyDetails.name == "stop") {
+                    println "Adding environment variable KARAF_SCRIPT to " + fileCopyDetails.path
+                    // then apply filter
+                    filter {
+                        it.replaceFirst(
+                                '(#!/bin/sh)',
+                                '$1\n' +
+                                        "KARAF_SCRIPT='start-mcs'\n" +
+                                        "export KARAF_SCRIPT\n"
+                        )
+                    }
+                }
+            }
+
+            //eachFile { FileCopyDetails fileCopyDetails ->
+            //    if (fileCopyDetails.name == "karaf") {
+            //        filter {
+            //            it.replaceFirst(
+            //                    '(init\\(\\))',
+            //                    '$1\n' +
+            //                            "forceNoRoot\n" +
+            //                            "export KARAF_SCRIPT\n"
+            //            )
+            //        }
+            //    }
+            //}
+
+            eachFile { FileCopyDetails fileCopyDetails ->
+                def text = """
+                            export EXTRA_JAVA_OPTS="-Dorg.eclipse.jetty.server.Request.maxFormContentSize=1500000 -Dfile.encoding=UTF-8"
+                            export JAVA_MAX_MEM=4G
+                            export JAVA_PERM_MEM=256M
+                            export KARAF_NOROOT=true
+
+                            export KARAF_DATA=/var/lib/mcs
+                            export KARAF_ETC=/etc/mcs
+                            """
+                if (fileCopyDetails.name == "setenv") {
+                    filter { it.replaceFirst('(#!/bin/sh)', '$1' + text) }
+                }
+            }
+
+            //rename as unpacked: https://docs.gradle.org/current/userguide/working_with_files.html#sec:renaming_files
+            rename { String fileName ->
+                if (fileName == "stop") {
+                    fileName = fileName + "-mcs"
+                }
+            }
+
+            rename { String fileName ->
+                if (fileName == "karaf") {
+                    fileName = "start-mcs"
+                }
+            }
+
+            exclude { FileTreeElement fileTreeElement ->
+                fileTreeElement.file.name.endsWith('.bat')
+            }
+        }
+
+        copy {
+            from "$assemblyPath/kar"
+            into "$assemblyPath/$dist_path_component/deploy"
+        }
+
+        copy {
+            from "$karaf_base_dir/branding.properties"
+            into "$assemblyPath/$dist_path_component/etc"
+        }
+        mkdir "$assemblyPath/$dist_path_component/etc/rooms"
+        return file("$assemblyPath/$dist_path_component")
+    }
+
+    def assemblySet = tasks.getByName("collectAssemblies").outputs.files
+    def expandedKarafSrc = tasks.getByName("expandKarafTar").outputs.files
+    def distName = "dist"
+    def distSet = assemblySet.collect({ f -> f.path + "/$distName" })
+
+    inputs.files(assemblySet, expandedKarafSrc)
+    outputs.dirs(distSet)
+
+    doLast {
+        assemblySet.forEach {
+            println "Processing assembly at path: " + it
+            makeDistribution(expandedKarafSrc, it)
+        }
+    }
+}
+
+
+/**
+ * Another, discouraged, way to share build logic between
+ * subproject is cross project configuration via the subprojects {}* and allprojects {} DSL constructs.
+ */
+allprojects {
+    task listrepos {
+        doLast {
+            println "Repositories:"
+            project.repositories.each {
+                if (it.name == '__plugin_repository__Gradle Central Plugin Repository') {
+                    println "Name: " + it.name + "; url: " + it.url
+                } else {
+                    println "Name: " + it.displayName
+                }
+            }
+        }
+    }
+}
+
+subprojects.each {
+}
+
+subprojects {
+    task printTasks {
+        doLast {
+            tasks.each {
+                println it
+            }
+        }
+    }
+    task allDeps(type: DependencyReportTask) {}
+}
+
+
+/**
+ * Declaring a task dependency from one project to another
+ * is a poor way to model this kind of relationship and introduces
+ * unnecessary coupling. The recommended way to model such a dependency
+ * is to produce the output, mark it as an "outgoing" artifact or add
+ * it to the output of the main source set which you can depend on in
+ * the consuming project.
+ *
+ * https://docs.gradle.org/current/userguide/declaring_dependencies_between_subprojects.html#javadependencies_2
+ */
+
+task listSubprojects() {
+    doLast {
+        println("Project List")
+        subprojects.each {
+            println(it)
+        }
+    }
+}
+
+task copyOsScripts(type: Copy, group: 'rpm') {
+    inputs.dir("$projectDir/osscripts")
+    outputs.dir("$buildDir/osscripts")
+
+    from "$projectDir/osscripts"
+    into "$buildDir/osscripts"
+}
+
+// Utility
+def joinBaseToNames = { File b, String p -> new File(b, p) }
+
+// Create RPM Tasks based on Assembly Subprojects
+setOfAssembledAssemblyFiles.forEach {
+    def assembly_dir = it
+    def assembly_base = new File(it, 'dist')
+    def author = 'Jonathan L. Komar'
+    def app_dir = "/usr/share/mcs"
+    def etc_dir = "/etc/mcs"
+    tasks.create(name: "${it.name}", type: Rpm, group: "rpm", dependsOn: ['processAssemblies', 'copyOsScripts'])
+            {
+                outputs.upToDateWhen { false }
+                def base = assembly_dir
+                def prependBase = joinBaseToNames.curry(base)
+                println "Creating RPM Task from assembly base: " + base
+
+                // signingKeyId ''
+                // signingKeyPassphrase ''
+                // signingKeyRingFile ''
+
+                // Derive all files from standardized dist path (name of assembly is shared)
+                packageName assembly_dir.name
+                packageGroup 'uibk'
+                summary 'MCS integrates Extron lecture hall equipment with the rest of your system.'
+                packageDescription 'MCS integrates the lecture halls with the personnel registry (implemented by VIS), the course registry (implemented by TVR), and the media archive (implemented by Opencast).'
+                license 'MIT License'
+                packager author
+                maintainer author
+                //distribution ''
+                vendor 'UIBK'
+                url 'https://git.uibk.ac.at/zid/dmlt/'
+                //sourcePackage ''
+                version version
+                arch 'NOARCH'
+                os OperatingSystemFamily.LINUX
+                buildHost = "hostname".execute().text
+                epoch = "1"
+                //RpmType type ''
+                // prefixes = []
+                preInstall file("$buildDir/osscripts/preInstall.sh")
+                postInstall file("$buildDir/osscripts/postInstall.sh")
+
+                // Requirements for start scripts
+                requires('bash') // Dependency object cnstructor
+                //requires('nc')
+                requires('sed')
+                requires('systemd')
+                requires('java-1.8.0-openjdk')
+                requires('maven')
+
+                user 'mcs'
+                permissionGroup 'root'
+
+                into app_dir // sets base
+                createDirectoryEntry = true
+
+                directory('/var/lib/mcs', 0740, false)
+                directory('/var/log/mcs', 0740, false)
+                directory('/srv/mcs', 0740, true)
+
+                from(file("$buildDir/osscripts/mcs.service")) {
+                    into ''
+                }
+
+                from(new File(assembly_base, 'etc')) {
+                    fileType CONFIG | NOREPLACE
+                    into 'etc'
+                }
+
+                from(new File(assembly_base, 'bin')) {
+                    into 'bin'
+                    createDirectoryEntry = true
+                }
+
+                from(new File(assembly_base, 'data')) {
+                    into 'data'
+                    createDirectoryEntry = true
+                }
+
+                from(new File(assembly_base, 'deploy')) {
+                    into 'deploy'
+                    createDirectoryEntry = true
+                }
+
+                from(new File(assembly_base, 'lib')) {
+                    into 'lib'
+                    createDirectoryEntry = true
+                }
+
+                from(new File(assembly_base, 'system')) {
+                    into 'system'
+                    createDirectoryEntry = true
+                }
+
+                def extras = ['LICENSE', 'README.md', 'NOTICE', 'RELEASE-NOTES.md']
+                from(extras.collect(prependBase)) {
+                    into assembly_dir
+                }
+
+                //link(String symLinkPath, String targetPath, int permissions)
+                link(etc_dir, new File(app_dir, "etc").toString())
+            } // END tasks.create
+}

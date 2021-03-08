@@ -1,0 +1,23 @@
+plugins {
+    id 'mcs.convention.plugin.standard'
+}
+
+
+
+dependencies {
+    implementation project(':functional')
+    //implementation project(':recorderservice-api') // TODO added only for observer
+    //implementation project(':person-api') // TODO added only for recinstance
+    //implementation project(':bookingrepo-api') // TODO added only for recinstance
+
+    compileOnly EXTERNAL_LIBS['com.fasterxml.jackson.core:jackson-annotations']
+    compileOnly EXTERNAL_LIBS["org.slf4j:slf4j-api"]
+    implementation EXTERNAL_LIBS["org.apache.logging.log4j:log4j-slf4j-impl"]
+}
+
+jar {
+    bnd '''
+-exportcontents: at.ac.uibk.mcsconnect.common.api, at.ac.uibk.mcsconnect.common.api.observerpattern, at.ac.uibk.mcsconnect.common.api.datastructure
+-sources: true
+'''
+}
