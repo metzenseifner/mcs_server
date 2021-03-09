@@ -16,6 +16,7 @@ import at.ac.uibk.mcsconnect.person.api.User;
 import at.ac.uibk.mcsconnect.person.api.UserFactory;
 import at.ac.uibk.mcsconnect.recorderservice.api.RecorderRunningStatesEnum;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstance;
+import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.Room;
 import at.ac.uibk.mcsconnect.roomrepo.api.RoomRepo;
@@ -96,6 +97,7 @@ public class PublicResourceImpl implements PublicResourceApi {
     private final RecordingInstanceFactory recordingInstanceFactory;
     private final RequestUtilities requestUtilities;
     private final McsConfiguration mcsConfiguration;
+    private final RecordingInstanceConfiguration recordingInstanceConfiguration;
 
 
 
@@ -121,12 +123,14 @@ public class PublicResourceImpl implements PublicResourceApi {
             BookingRepo bookingRepo,
             UserFactory userFactory,
             RecordingInstanceFactory recordingInstanceFactory,
-            McsConfiguration mcsConfiguration) {
+            McsConfiguration mcsConfiguration,
+            RecordingInstanceConfiguration recordingInstanceConfiguration) {
         this.roomRepo = roomRepo;
         this.bookingRepo = bookingRepo;
         this.userFactory = userFactory;
         this.recordingInstanceFactory = recordingInstanceFactory;
         this.mcsConfiguration = mcsConfiguration;
+        this.recordingInstanceConfiguration = recordingInstanceConfiguration;
         this.requestUtilities = new RequestUtilities(roomRepo);
     }
 
@@ -227,7 +231,8 @@ public class PublicResourceImpl implements PublicResourceApi {
                         rom,
                         usr,
                         bookingRepo,
-                        recordingInstanceFactory
+                        recordingInstanceFactory,
+                        recordingInstanceConfiguration
                 )
         ));
 

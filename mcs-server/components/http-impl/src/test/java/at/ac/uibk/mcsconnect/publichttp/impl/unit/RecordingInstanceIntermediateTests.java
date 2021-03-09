@@ -16,12 +16,14 @@ import at.ac.uibk.mcsconnect.recorderservice.api.DublinCore;
 import at.ac.uibk.mcsconnect.recorderservice.api.Recorder;
 import at.ac.uibk.mcsconnect.recorderservice.api.RecorderRunningStatesEnum;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstance;
+import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.Room;
 import at.ac.uibk.mcsconnect.roomrepo.api.RoomFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.RoomRepo;
 import at.ac.uibk.mcsconnect.roomrepo.api.Terminal;
 import at.ac.uibk.mcsconnect.roomrepo.impl.integration.FakeRecorder;
+import at.ac.uibk.mcsconnect.roomrepo.impl.integration.FakeRecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.impl.integration.FakeRecordingInstanceFactory;
 import at.ac.uibk.mcsconnect.roomrepo.impl.integration.FakeRoom;
 import at.ac.uibk.mcsconnect.roomrepo.impl.integration.FakeRoomFactory;
@@ -40,6 +42,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -53,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * Hybrid between unit and integration tests: integration because of the other components involved
  */
+@DisplayName("Contains mostly integration tests")
 public class RecordingInstanceIntermediateTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecordingInstanceIntermediateTests.class);
@@ -69,6 +73,7 @@ public class RecordingInstanceIntermediateTests {
     Set<Terminal> terminals;
     BookingRepo bookingRepo;
     RecordingInstanceFactory recordingInstanceFactory;
+    RecordingInstanceConfiguration recordingInstanceConfiguration;
 
     private static Set<Recorder> recordersHelper() {
         Set<Recorder> recorders = new HashSet<>();
@@ -86,6 +91,8 @@ public class RecordingInstanceIntermediateTests {
 
     @BeforeEach
     void setupRoomService() {
+
+        this.recordingInstanceConfiguration = new FakeRecordingInstanceConfiguration(30, TimeUnit.MINUTES);
 
         this.terminals = terminalsHelper();
 
@@ -195,6 +202,7 @@ public class RecordingInstanceIntermediateTests {
         Result<User> rUser = Result.of(this.finiganSmithers, "User may not be null");
         Result<BookingRepo> rBookingRepo = Result.of(this.bookingRepo, "Booking repo may not be null");
         Result<RecordingInstanceFactory> rRecordingFactory = Result.of(this.recordingInstanceFactory, "Recording Factory may not be null");
+        Result<RecordingInstanceConfiguration> rRecordingInstanceConfiguration = Result.of(this.recordingInstanceConfiguration, "Recording Instance Configuration may not be null");
 
         Result<RecordingInstance> sut =
                 rPost
@@ -202,16 +210,18 @@ public class RecordingInstanceIntermediateTests {
                                 .flatMap(room -> rUser
                                         .flatMap(user -> rBookingRepo
                                                 .flatMap(bookRepo -> rRecordingFactory
-                                                        .flatMap(recFactory ->
-                                                                /** input complex due to asserts in RecordingInstanceIntermediate */
-                                                                RequestUtilities
-                                                                        .recordingInstanceDTOToRecordingInstance(
-                                                                                post,
-                                                                                room,
-                                                                                user,
-                                                                                bookRepo,
-                                                                                recFactory)
-                                                        )))));
+                                                        .flatMap(recFactory -> rRecordingInstanceConfiguration
+                                                            .flatMap(recInsConfig ->
+                                                                    /** input complex due to asserts in RecordingInstanceIntermediate */
+                                                                    RequestUtilities
+                                                                            .recordingInstanceDTOToRecordingInstance(
+                                                                                    post,
+                                                                                    room,
+                                                                                    user,
+                                                                                    bookRepo,
+                                                                                    recFactory,
+                                                                                    recInsConfig)
+                                                            ))))));
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(RecordingInstanceIntermediateTests::logError);
 
@@ -231,7 +241,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(RecordingInstanceIntermediateTests::logError);
         sut.map(s -> assertThat(s.getBooking().getBookingId()).isEqualTo(Long.valueOf("12345")));
@@ -249,6 +260,7 @@ public class RecordingInstanceIntermediateTests {
         Result<User> rUser = Result.of(this.finiganSmithers, "User may not be null");
         Result<BookingRepo> rBookingRepo = Result.of(this.bookingRepo, "Booking repo may not be null");
         Result<RecordingInstanceFactory> rRecordingFactory = Result.of(this.recordingInstanceFactory, "Recording Factory may not be null");
+        Result<RecordingInstanceConfiguration> rRecordingInstanceConfiguration = Result.of(this.recordingInstanceConfiguration, "Recording Instance Configuration may not be null");
 
         Result<RecordingInstance> sut =
                 rPost
@@ -256,16 +268,18 @@ public class RecordingInstanceIntermediateTests {
                                 .flatMap(room -> rUser
                                         .flatMap(user -> rBookingRepo
                                                 .flatMap(bookRepo -> rRecordingFactory
-                                                        .flatMap(recFactory ->
-                                                                /** input complex due to asserts in RecordingInstanceIntermediate */
-                                                                RequestUtilities
-                                                                        .recordingInstanceDTOToRecordingInstance(
-                                                                                post,
-                                                                                room,
-                                                                                user,
-                                                                                bookRepo,
-                                                                                recFactory)
-                                                        )))));
+                                                        .flatMap(recFactory -> rRecordingInstanceConfiguration
+                                                            .flatMap(recInsConfig ->
+                                                                    /** input complex due to asserts in RecordingInstanceIntermediate */
+                                                                    RequestUtilities
+                                                                            .recordingInstanceDTOToRecordingInstance(
+                                                                                    post,
+                                                                                    room,
+                                                                                    user,
+                                                                                    bookRepo,
+                                                                                    recFactory,
+                                                                                    recInsConfig)
+                                                            ))))));
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(err -> RecordingInstanceIntermediateTests.logError(String.format("%s", err)));
         sut.map(s -> assertThat(s.getStopTime()).isEqualTo(LocalDateTime.parse("1900-10-20T10:10:00")));
@@ -284,7 +298,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(RecordingInstanceIntermediateTests::logError);
         sut.map(s -> assertThat(s.getStopTime()).isEqualTo(LocalDateTime.parse("1900-10-20T10:10:00")));
@@ -303,7 +318,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomAWithoutRecordingInstance,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(RecordingInstanceIntermediateTests::logError);
         sut.map(s -> assertThat(s.getStopTime()).isEqualTo(LocalDateTime.parse("1900-10-20T10:10:00")));
@@ -312,19 +328,35 @@ public class RecordingInstanceIntermediateTests {
     @Test
     @DisplayName("Set stop time to new time does not affect current stop time when new stop time exceeds threshold.")
     void change_stop_time_fails_on_existing_recording_instance_when_exceeds_max() {
-        RecordingInstanceIntermediatePost post = new RecordingInstanceIntermediateDTO(
+        RecordingInstanceIntermediatePost extendStopTimeBy10 = new RecordingInstanceIntermediateDTO(
+                "12345", "1900-10-20T10:10:00", "", "");
+
+        RecordingInstanceIntermediatePost extendStopTimeByTooMuch = new RecordingInstanceIntermediateDTO(
                 "12345", "1900-10-20T10:35:00", "", "");
 
-        Result<RecordingInstance> sut = RequestUtilities
+        Result<RecordingInstance> firstPost = RequestUtilities
                 .recordingInstanceDTOToRecordingInstance(
-                        post,
+                        extendStopTimeBy10,
                         this.roomAWithoutRecordingInstance,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+
+        firstPost.forEachOrFail(ri -> this.roomAWithoutRecordingInstance.setRecordingInstance(Optional.of(ri))).forEach(RecordingInstanceIntermediateTests::logError);
+        firstPost.map(s -> assertThat(s.getStopTime()).isEqualTo(LocalDateTime.parse("1900-10-20T10:10:00")));
+
+        Result<RecordingInstance> sut = RequestUtilities
+                .recordingInstanceDTOToRecordingInstance(
+                        extendStopTimeByTooMuch,
+                        this.roomAWithoutRecordingInstance,
+                        this.finiganSmithers,
+                        this.bookingRepo,
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(RecordingInstanceIntermediateTests::logError);
-        sut.map(s -> assertThat(s.getStopTime()).isEqualTo(LocalDateTime.parse("1900-10-20T10:00:00")));
+        sut.map(s -> assertThat(s.getStopTime()).isEqualTo(LocalDateTime.parse("1900-10-20T10:10:00")));
     }
 
     @Test
@@ -339,7 +371,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(RecordingInstanceIntermediateTests::logError);
         sut.map(s -> assertThat(s.getBooking().getBookingId()).isEqualTo(6789L));
@@ -358,7 +391,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.forEachOrFail(s -> logInfo(s.toString())).forEach(RecordingInstanceIntermediateTests::logError);
         sut.map(s -> assertThat(s.getStopTime()).isEqualTo(LocalDateTime.parse("1986-04-26T13:00:00")));
@@ -376,7 +410,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.map(s -> assertThat(s.getBooking().getBookingId()).isEqualTo(Long.valueOf("5555")));
     }
@@ -395,7 +430,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut1.map(s -> assertThat(s.getRecordingRunningState().toString()).isEqualTo("RECORDING"));
 
@@ -408,7 +444,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut2.map(s -> assertThat(s.getRecordingRunningState().toString()).isEqualTo("STOPPED"));
 
@@ -421,7 +458,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut3.map(s -> assertThat(s.getRecordingRunningState().toString()).isEqualTo("RECORDING"));
     }
@@ -440,7 +478,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         startRecordingRequest.map(s -> assertThat(s.getRecordingRunningState().toString()).isEqualTo("RECORDING"));
 
@@ -453,7 +492,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         stopRecordingRequest.map(s -> assertThat(s.getRecordingRunningState().toString()).isEqualTo("STOPPED"));
 
@@ -467,7 +507,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         sut.map(s -> assertThat(s.getBooking().getBookingId()).isEqualTo(Long.valueOf(6789)));
         sut.map(s -> assertThat(s.getRecordingRunningState().toString()).isEqualTo("STOPPED"));
@@ -504,7 +545,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         newRecordingInstance.map(s -> assertThat(s.getBooking().getBookingId()).isEqualTo(Long.valueOf(6789L)));
         newRecordingInstance.map(Optional::of).forEachOrFail(r -> this.roomBWithStoppedRecordingInstanceForBooking12345.setRecordingInstance(r));
@@ -535,7 +577,8 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.finiganSmithers,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
 
         startRecordingRequest.map(s -> assertThat(s.getOwner().toString()).isEqualTo("FakeUser(c000000, Finigan Smithers)"));
 
@@ -553,11 +596,104 @@ public class RecordingInstanceIntermediateTests {
                         this.roomBWithStoppedRecordingInstanceForBooking12345,
                         this.joseppiHanighan,
                         this.bookingRepo,
-                        this.recordingInstanceFactory);
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+    }
 
+    @Test
+    @DisplayName("Change name of recording instance once recording starts has no effect")
+    void cannot_change_name_of_recording_instance_when_running_state_is_already_recording() {
+        RecordingInstanceIntermediatePost startRecordingWithName = new RecordingInstanceIntermediateDTO(
+                "12345", "", "A", "RECORDING");
+
+        Result<RecordingInstance> startRecordingRequest = RequestUtilities
+                .recordingInstanceDTOToRecordingInstance(
+                        startRecordingWithName,
+                        this.roomAWithoutRecordingInstance,
+                        this.finiganSmithers,
+                        this.bookingRepo,
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+        startRecordingRequest.forEachOrFail(ri -> assertThat(ri.getRecordingName()).isEqualTo("A"));
+        startRecordingRequest.forEachOrFail(ri -> roomAWithoutRecordingInstance.setRecordingInstance(Optional.of(ri)));
+
+
+
+        RecordingInstanceIntermediatePost changeRecordingName = new RecordingInstanceIntermediateDTO(
+                "12345", "", "B", "RECORDING");
+        Result<RecordingInstance> changeNameRequest = RequestUtilities
+                .recordingInstanceDTOToRecordingInstance(
+                        changeRecordingName,
+                        this.roomAWithoutRecordingInstance,
+                        this.finiganSmithers,
+                        this.bookingRepo,
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+
+        changeNameRequest.forEachOrFail(ri -> assertThat(ri.getRecordingName()).isEqualTo("A"));
 
 
     }
+
+    @Test
+    @DisplayName("Change name of recording instance after start and stop and start and stop on the same booking.")
+    void can_change_recording_instance_name_after_start_stop() {
+        RecordingInstanceIntermediatePost post1 = new RecordingInstanceIntermediateDTO(
+                "12345", "", "A", "RECORDING");
+
+        Result<RecordingInstance> startRecordingRequest1 = RequestUtilities
+                .recordingInstanceDTOToRecordingInstance(
+                        post1,
+                        this.roomBWithStoppedRecordingInstanceForBooking12345,
+                        this.finiganSmithers,
+                        this.bookingRepo,
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+        startRecordingRequest1.forEachOrFail(ri -> this.roomBWithStoppedRecordingInstanceForBooking12345.setRecordingInstance(Optional.of(ri))).forEach(RecordingInstanceIntermediateTests::logError);
+
+        RecordingInstanceIntermediatePost post2 = new RecordingInstanceIntermediateDTO(
+                "12345", "", "", "STOPPED");
+        Result<RecordingInstance> stopRecordingRequest1 = RequestUtilities
+                .recordingInstanceDTOToRecordingInstance(
+                        post2,
+                        this.roomBWithStoppedRecordingInstanceForBooking12345,
+                        this.finiganSmithers,
+                        this.bookingRepo,
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+        stopRecordingRequest1.forEachOrFail(ri -> this.roomBWithStoppedRecordingInstanceForBooking12345.setRecordingInstance(Optional.of(ri))).forEach(RecordingInstanceIntermediateTests::logError);
+        String sut1 = this.roomBWithStoppedRecordingInstanceForBooking12345.getRecordingInstance().get().getRecordingName();
+        assertThat(sut1).isEqualTo("A");
+
+        RecordingInstanceIntermediatePost post3 = new RecordingInstanceIntermediateDTO(
+                "12345", "", "B", "RECORDING");
+        Result<RecordingInstance> startRecordingRequest2 = RequestUtilities
+                .recordingInstanceDTOToRecordingInstance(
+                        post3,
+                        this.roomBWithStoppedRecordingInstanceForBooking12345,
+                        this.finiganSmithers,
+                        this.bookingRepo,
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+        startRecordingRequest2.forEachOrFail(ri -> this.roomBWithStoppedRecordingInstanceForBooking12345.setRecordingInstance(Optional.of(ri))).forEach(RecordingInstanceIntermediateTests::logError);
+
+        RecordingInstanceIntermediatePost post4 = new RecordingInstanceIntermediateDTO(
+                "12345", "", "", "STOPPED");
+        Result<RecordingInstance> stopRecordingRequest2 = RequestUtilities
+                .recordingInstanceDTOToRecordingInstance(
+                        post4,
+                        this.roomBWithStoppedRecordingInstanceForBooking12345,
+                        this.finiganSmithers,
+                        this.bookingRepo,
+                        this.recordingInstanceFactory,
+                        this.recordingInstanceConfiguration);
+        stopRecordingRequest2.forEachOrFail(ri -> this.roomBWithStoppedRecordingInstanceForBooking12345.setRecordingInstance(Optional.of(ri))).forEach(RecordingInstanceIntermediateTests::logError);
+
+        String sut2 = this.roomBWithStoppedRecordingInstanceForBooking12345.getRecordingInstance().get().getRecordingName();
+        assertThat(sut2).isEqualTo("B");
+    }
+
+
 
     private static void logInfo(String msg) {
         LOGGER.info(msg);

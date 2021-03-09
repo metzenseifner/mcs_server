@@ -38,12 +38,12 @@ public class RecordingInstanceAssertions {
     }
 
     /** Threshold configurable in {@link RecordingInstanceConfiguration} */
-    public static boolean isValidStopTime(LocalDateTime s, Booking booking) {
+    public static boolean isValidStopTime(LocalDateTime s, Long threshold, TimeUnit unit, Booking booking) {
         Result<LocalDateTime> rLocalDateTime = Result.of(s);
         Result<Booking> rBooking = Result.of(booking);
         return rBooking
                 .map(Booking::getTimeEnd)
-                .map(bookingStopTime -> bookingStopTime.plusMinutes(TimeUnit.MINUTES.toMinutes(30)))
+                .map(bookingStopTime -> bookingStopTime.plusMinutes(unit.toMinutes(threshold)))
                 .flatMap(bookingStopTimeThreshold -> rLocalDateTime.map( newStopTime -> (newStopTime.isBefore(bookingStopTimeThreshold) || newStopTime.isEqual(bookingStopTimeThreshold)) )).getOrElse(false);
     }
 
@@ -56,9 +56,11 @@ public class RecordingInstanceAssertions {
      * @return
      */
     public static boolean isValidRecordingName(String n) {
-
         return n != null && n.length() <= 127;
+    }
 
+    public static boolean isNameChangeAllowed(RecorderRunningStatesEnum state, String n) {
+        return state.equals(RecorderRunningStatesEnum.RECORDING) ? false : true;
     }
 
     public static boolean isValidMetadata(Metadata c) {
@@ -97,8 +99,8 @@ public class RecordingInstanceAssertions {
         return Result.of(RecordingInstanceAssertions::isValidBooking, b, failureMessage);
     }
 
-    public static Result<LocalDateTime> assertValidStopTime(LocalDateTime s, Booking b, String failureMessage) {
-        return RecordingInstanceAssertions.isValidStopTime(s, b)
+    public static Result<LocalDateTime> assertValidStopTime(LocalDateTime s, Booking b, Long stopTimeThreshold, TimeUnit stopTimeThresholdUnit,String failureMessage) {
+        return RecordingInstanceAssertions.isValidStopTime(s, stopTimeThreshold, stopTimeThresholdUnit, b)
             ? Result.success(s)
             : Result.failure(String.format("Invalid stop time provided: %s", s));
     }
@@ -118,6 +120,12 @@ public class RecordingInstanceAssertions {
     public static Result<RecordingInstance> assertSameBooking(RecordingInstance recordingInstance, String bookingId, String failureMessage) {
         return RecordingInstanceAssertions.isRecordingInstanceBookingTheSameBooking(recordingInstance, bookingId)
                 ? Result.success(recordingInstance)
+                : Result.failure(failureMessage);
+    }
+
+    public static Result<String> assertNameChangeAllowed(RecordingInstance recordingInstance, String newName, String failureMessage) {
+        return RecordingInstanceAssertions.isNameChangeAllowed(recordingInstance.getRecordingRunningState(), newName)
+                ? Result.success(newName)
                 : Result.failure(failureMessage);
     }
 }

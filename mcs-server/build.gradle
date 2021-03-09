@@ -295,9 +295,6 @@ allprojects {
     }
 }
 
-subprojects.each {
-}
-
 subprojects {
     task printTasks {
         doLast {

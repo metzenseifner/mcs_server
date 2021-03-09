@@ -7,6 +7,7 @@ import at.ac.uibk.mcsconnect.person.api.User;
 import at.ac.uibk.mcsconnect.recorderservice.api.Recorder;
 import at.ac.uibk.mcsconnect.recorderservice.api.RecorderRunningStatesEnum;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstance;
+import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.Room;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -41,9 +42,10 @@ public class RecordingInstanceIntermediate {
 
     //LoginService loginService; // TODO not implemented. Would replace the User input.
 
-    BookingRepo bookingRepo;
+    private final BookingRepo bookingRepo;
 
-    RecordingInstanceFactory recordingInstanceFactory;
+    private final RecordingInstanceFactory recordingInstanceFactory;
+    private final RecordingInstanceConfiguration recordingInstanceConfiguration;
 
     @Schema(required = true, description = "The ID of a booking. It must be provided on the first call, but may be left out on subsequent calls.")
     public final String bookingId;
@@ -58,12 +60,14 @@ public class RecordingInstanceIntermediate {
     public RecordingInstanceIntermediate(
             BookingRepo bookingRepo,
             RecordingInstanceFactory recordingInstanceFactory,
+            RecordingInstanceConfiguration recordingInstanceConfiguration,
             @JsonProperty("bookingId") String bookingId,
             @JsonProperty("stopTime") String stopTime,
             @JsonProperty("recordingName") String recordingName,
             @JsonProperty("recordingRunningState") String recordingRunningState) {
         this.bookingRepo = bookingRepo;
         this.recordingInstanceFactory = recordingInstanceFactory;
+        this.recordingInstanceConfiguration = recordingInstanceConfiguration;
 
         // STUFF THE CLIENT CAN SEND
         this.bookingId = bookingId;
@@ -91,18 +95,17 @@ public class RecordingInstanceIntermediate {
         // Wrap all fields.
         Result<RecordingInstanceFactory> rRecordingInstanceFactory = Result.of(this.recordingInstanceFactory, "Recording Instance Factory may not be null.");
         Result<String> rBookingId = RecordingInstanceAssertions.assertValidBookingId(bookingId, "Invalid booking id. A booking id is always required.");
-        Result<RecordingInstance> rOldRecordingInstance = rRoom.flatMap(r -> getExistingRecordingInstance(r)).flatMap(ri -> rBookingId.flatMap(bokId -> RecordingInstanceAssertions.assertSameBooking(ri, bokId, String.format("New booking with id %s detected, ignoring existing recording instance: %s", bokId, ri)))); // valid by comparing booking ids
+        Result<RecordingInstance> rExistingRecordingInstance = rRoom.flatMap(r -> getExistingRecordingInstance(r)).flatMap(ri -> rBookingId.flatMap(bokId -> RecordingInstanceAssertions.assertSameBooking(ri, bokId, String.format("New booking with id %s detected, ignoring existing recording instance: %s", bokId, ri)))); // valid by comparing booking ids
         Result<Booking> rBooking = rBookingId.flatMap(id -> rUser.flatMap(usr -> getBookingById(usr, id))); //   getBookingById(rUser.successValue(), this.bookingId)); // TODO: User MUST exist, so halfway acceptable, but this should be made more robust.
         Result<LocalDateTime> rDesiredStopTime = parseAsLocalDateTime(this.stopTime)
-                .flatMap(stopTime -> rBooking.flatMap(booking -> RecordingInstanceAssertions.assertValidStopTime(stopTime, booking, "Invalid stop time."))); // if fails, use orElse below to determine course of action
-        Result<String> rRecordingName = RecordingInstanceAssertions.assertValidRecordingName(this.recordingName, "Invalid recording name."); // TODO: Ensure reset on booking change
+                .flatMap(stopTime -> rBooking.flatMap(booking -> RecordingInstanceAssertions.assertValidStopTime(stopTime, booking, recordingInstanceConfiguration.getStopTimeExtensionThreshold(), recordingInstanceConfiguration.getStopTimeExtensionThresholdUnit(),"Invalid stop time."))); // if fails, use orElse below to determine course of action
+        Result<String> rRecordingName = RecordingInstanceAssertions.assertValidRecordingName(this.recordingName, "Invalid recording name."); // if succeed, name is valid, but a change may be prohibited because already recording
         Result<RecorderRunningStatesEnum> rDesiredRecorderRunningState = parseAsEnum(this.recordingRunningState, RecorderRunningStatesEnum.class);
 
         debugLogResult("Desired booking id", rBookingId);
         debugLogResult("Desired stop time", rDesiredStopTime);
         debugLogResult("Desired recording name", rRecordingName);
         debugLogResult("Desired recorder running state", rDesiredRecorderRunningState);
-
 
         /** Needed to create new {@link RecordingInstance} in the old version*/
         //Result<Set<Recorder>> rObservers = RecordingInstanceAssertion.assertValidObservers(room.getRecorders(), "Invalid observers.");
@@ -111,8 +114,8 @@ public class RecordingInstanceIntermediate {
                 rRoom
                     .flatMap(rom -> rUser // always the user from the current request. If missing, propogate failure.
                             .flatMap(usr -> rBooking // always booking based on id in request. If missing, propogate failure.
-                                    .flatMap(bok -> rDesiredStopTime.orElse(() -> rOldRecordingInstance.map(o -> o.getStopTime()).orElse(() -> rBooking.map(Booking::getTimeEnd)))
-                                            .flatMap(stp -> rRecordingName.orElse(() -> rBooking.map(Booking::getTimeBegin).map(startTime -> String.format("%s - %s", startTime.format(DateTimeFormatter.ISO_LOCAL_DATE), bok.getCourseName()))) // TODO default recording name should be made configurable.
+                                    .flatMap(bok -> rDesiredStopTime.orElse(() -> rExistingRecordingInstance.map(o -> o.getStopTime()).orElse(() -> rBooking.map(Booking::getTimeEnd)))
+                                            .flatMap(stp -> rRecordingName.flatMap(name -> rExistingRecordingInstance.flatMap(existingRec -> RecordingInstanceAssertions.assertNameChangeAllowed(existingRec, name, String.format("Name change not permitted given existing recording.", existingRec)))).orElse(() -> rExistingRecordingInstance.map(ri -> ri.getRecordingName())).orElse(() -> rRecordingName.orElse(() -> rBooking.map(Booking::getTimeBegin).map(startTime -> String.format("%s - %s", startTime.format(DateTimeFormatter.ISO_LOCAL_DATE), bok.getCourseName())))) // TODO default recording name should be made configurable.
                                                     .flatMap(recName -> rDesiredRecorderRunningState.orElse(() -> useDefaultRecordingRunningState())
                                                             .flatMap(recState -> rRecordingInstanceFactory // if desired state not sent, STOPPED is assumed. This has effects:
                                                                 .map(recFactory -> recFactory.create(rom, usr, bok, stp, recName, recState))))))));

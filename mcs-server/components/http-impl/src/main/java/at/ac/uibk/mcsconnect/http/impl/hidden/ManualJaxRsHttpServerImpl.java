@@ -9,6 +9,7 @@ import at.ac.uibk.mcsconnect.common.api.McsConfiguration;
 import at.ac.uibk.mcsconnect.http.api.PublicResourceApi;
 import at.ac.uibk.mcsconnect.http.impl.PublicResourceImpl;
 import at.ac.uibk.mcsconnect.person.api.UserFactory;
+import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.RoomRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,6 +55,8 @@ public class ManualJaxRsHttpServerImpl {
     private RecordingInstanceFactory recordingInstanceFactory;
     @Reference
     private McsConfiguration mcsConfiguration;
+    @Reference
+    private RecordingInstanceConfiguration recordingInstanceConfiguration;
 
     @Activate
     public void activate() throws Exception {
@@ -67,7 +70,7 @@ public class ManualJaxRsHttpServerImpl {
         endpoint.setResourceClasses(PublicResourceApi.class);
         // By default, the JAX-RS runtime is responsible for the lifecycle of resource classes, default lifecycle is per-request. You can set the lifecycle to singleton by using following line:
 
-        endpoint.setResourceProvider(PublicResourceApi.class, new SingletonResourceProvider(new PublicResourceImpl(roomRepo, bookingRepo, userFactory, recordingInstanceFactory, mcsConfiguration)));//new PerRequestResourceProvider(PublicResourceImpl.class)); // @PostConstruct
+        endpoint.setResourceProvider(PublicResourceApi.class, new SingletonResourceProvider(new PublicResourceImpl(roomRepo, bookingRepo, userFactory, recordingInstanceFactory, mcsConfiguration, recordingInstanceConfiguration)));//new PerRequestResourceProvider(PublicResourceImpl.class)); // @PostConstruct
         endpoint.setAddress("/mcs-connect"); // /cxf/whateverissethere/resourcepath //TODO make configurable
         //endpoint.setProvider(new EntityResolverFilter()); // Logic pushed into ResourceMapper and Resource
         //endpoint.setProvider(new ContainerRequestContextImpl());

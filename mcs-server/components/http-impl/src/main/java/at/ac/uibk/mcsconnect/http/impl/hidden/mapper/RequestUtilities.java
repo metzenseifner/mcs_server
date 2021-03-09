@@ -4,7 +4,6 @@ import at.ac.uibk.mcsconnect.bookingrepo.api.BookingRepo;
 import at.ac.uibk.mcsconnect.functional.common.Result;
 import at.ac.uibk.mcsconnect.functional.common.Tuple;
 import at.ac.uibk.mcsconnect.http.api.RecordingInstanceIntermediatePost;
-import at.ac.uibk.mcsconnect.http.impl.hidden.assembler.RecordingInstanceAssembler;
 import at.ac.uibk.mcsconnect.http.impl.hidden.assembler.RecordingInstanceIntermediate;
 import at.ac.uibk.mcsconnect.http.impl.hidden.assembler.TerminalAssembler;
 import at.ac.uibk.mcsconnect.http.impl.hidden.assembler.UserAssembler;
@@ -15,11 +14,11 @@ import at.ac.uibk.mcsconnect.http.impl.hidden.datatransferobject.VersionDTO;
 import at.ac.uibk.mcsconnect.person.api.User;
 import at.ac.uibk.mcsconnect.person.api.UserFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstance;
+import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.Room;
 import at.ac.uibk.mcsconnect.roomrepo.api.RoomRepo;
 import at.ac.uibk.mcsconnect.roomrepo.api.Terminal;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,6 +179,7 @@ public class RequestUtilities {
     private static Result<RecordingInstanceIntermediate> recordingInstancePostToRecordingInstanceIntermediate(
             BookingRepo bookingRepo,
             RecordingInstanceFactory recordingInstanceFactory,
+            RecordingInstanceConfiguration recordingInstanceConfiguration,
             RecordingInstanceIntermediatePost recordingInstanceIntermediatePost
     ) {
         Result<BookingRepo> rBookingRepo = Result.of(bookingRepo, "Booking repo may not be null");
@@ -193,6 +193,7 @@ public class RequestUtilities {
                                         new RecordingInstanceIntermediate(
                                                 bookingRepo,
                                                 recordingInstanceFactory,
+                                                recordingInstanceConfiguration,
                                                 dto.getBookingId(),
                                                 dto.getStopTime(),
                                                 dto.getRecordingName(),
@@ -209,7 +210,10 @@ public class RequestUtilities {
      *
      * @return
      */
-    private static Result<RecordingInstance> recordingInstanceIntermediateToRecordingInstance(RecordingInstanceIntermediate recordingInstanceIntermediate, Room room, User user) {
+    private static Result<RecordingInstance> recordingInstanceIntermediateToRecordingInstance(
+            RecordingInstanceIntermediate recordingInstanceIntermediate,
+            Room room,
+            User user) {
         Result<RecordingInstanceIntermediate> rRecordingInstanceIntermediate = Result.of(recordingInstanceIntermediate, "Recording Instance Intermediate may not be null.");
         Result<Room> rRoom = Result.of(room, "Room may not be null");
         Result<User> rUser = Result.of(user, "User may not be null");
@@ -217,16 +221,7 @@ public class RequestUtilities {
     }
 
     /**
-     * TODO Consider using to simplify the http layer
-     *
-     * This is an example of what is possible
-     *
-     * */
-    public static Function<RecordingInstanceFactory, Function<BookingRepo, Function<Room, Function<User, Function<RecordingInstanceIntermediatePost, Result<RecordingInstance>>>>>> recording_instance_post_to_recording_instance =
-             recFactory -> bookRepo -> room -> user -> post -> recordingInstanceDTOToRecordingInstance(post, room, user, bookRepo, recFactory);
-
-    /**
-     * The main function for the http layer
+     * The main function for the http layer.
      *
      * It creates a {@link RecordingInstanceIntermediate} for a DTO
      * and
@@ -236,8 +231,9 @@ public class RequestUtilities {
             Room room,
             User user,
             BookingRepo bookingRepo,
-            RecordingInstanceFactory recordingInstanceFactory) {
-        Result<RecordingInstanceIntermediate> rRecordingInstanceIntermediate = recordingInstancePostToRecordingInstanceIntermediate(bookingRepo, recordingInstanceFactory, post);
+            RecordingInstanceFactory recordingInstanceFactory,
+            RecordingInstanceConfiguration recordingInstanceConfiguration) {
+        Result<RecordingInstanceIntermediate> rRecordingInstanceIntermediate = recordingInstancePostToRecordingInstanceIntermediate(bookingRepo, recordingInstanceFactory, recordingInstanceConfiguration, post);
         Result<Room> rRoom = Result.of(room, "Room may not be null");
         Result<User> rUser = Result.of(user, "User may not be null");
         return rRoom
