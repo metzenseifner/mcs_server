@@ -32,3 +32,10 @@ in the infrastructure at the University of Innsbruck:
 This project is a multi-project Gradle build.
 To build mcs-server, run `gradle build`. The RPMs will land under `mcs-server/build/distributions`.
 The Apache Karaf KAR files are created per assembly under `mcs-server/build/assemblies/<name>/kar`.
+
+
+# Infrastructure Checklist
+
+1. Open ticket for new host with linux server group Zentrale Systeme Linux Server LXSERVER. Florian Faltermeier or Alex Bihlmaier.
+1. Open ticket to register new ips and domain names for hosts with IKT INNET Admin NETADM. Walter Müller.
+1. Open ticket for domain nam entry on IdP (entity id with certificate) with WEB Identity Management und Datenbank Entwicklung DBDEVEL. Martin Krenn.
