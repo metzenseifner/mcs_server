@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 import static at.ac.uibk.mcsconnect.roomrepo.impl.hidden.YamlDtoAssembler.safeExtractSetResults;
 
 @Component(
-        name = "at.ac.uibk.mcsconnect.roomservice.impl.RoomServiceYamlImpl",
+        name = "at.ac.uibk.mcsconnect.roomrepo.impl.RoomServiceYamlImpl",
         immediate = true,
         scope = ServiceScope.SINGLETON
 )
