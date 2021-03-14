@@ -11,5 +11,5 @@ RUN dnf install -y java-1.8.0-openjdk && \
 
 USER mcs
 
-ENTRYPOINT /setpermissions /usr/share/mcs $(id -u) $(id -g)
+ENTRYPOINT /setpermissions /usr/share/mcs $(id -u) $(id -g) && exec "$@"
 CMD /usr/share/mcs/bin/start-mcs server

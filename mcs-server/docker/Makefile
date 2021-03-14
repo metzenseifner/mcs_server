@@ -6,3 +6,6 @@ build:
 
 push:
 	docker push URL:VERSION
+
+buildandpush: build push
+	@echo "Building and pushing, as ordered."
