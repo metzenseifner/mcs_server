@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component(
-        name = "at.ac.uibk.mcsconnect.bookingservice.impl.TvrBookingServiceImpl",
+        name = "at.ac.uibk.mcsconnect.bookingrepo.impl.TvrBookingRepoImpl",
         immediate = true,
         scope = ServiceScope.SINGLETON
 )
