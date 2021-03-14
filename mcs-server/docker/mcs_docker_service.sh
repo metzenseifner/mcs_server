@@ -1,3 +1,4 @@
+#!/bin/sh
 IMG=URL:VERSION
 docker pull $IMG
 docker service create \
