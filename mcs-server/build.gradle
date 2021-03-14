@@ -18,6 +18,8 @@ final gitTag = "git describe HEAD".execute().text.trim() // git describe HEAD
 final gitCommitIdShort = "git rev-parse --short=10 HEAD".execute().text.trim()
 final SNAPSHOT_OR_RELEASE = project.hasProperty("release") ? "RELEASE" : "SNAPSHOT"
 
+project.ext.url = 'https://git.uibk.ac.at/zid/dmlt/avportal/mcs-server'
+
 //project.version = "${gitTag}-${gitBranch}-${gitCommitIdShort}-${SNAPSHOT_OR_RELEASE}"
 project.version = "${gitTag}-branch-${gitBranch}-commit-${gitCommitIdShort}"//-${SNAPSHOT_OR_RELEASE}"
 
@@ -267,10 +269,53 @@ task processAssemblies(group: 'karaf') {
     inputs.files(assemblySet, expandedKarafSrc)
     outputs.dirs(distSet)
 
+
+
     doLast {
         assemblySet.forEach {
             println "Processing assembly at path: " + it
             makeDistribution(expandedKarafSrc, it)
+        }
+    }
+}
+
+task makeDockerBuildDirsForRpms(group: 'docker') {
+    dependsOn 'build'
+    description "Creates docker image from an RPM distribution under docker"
+
+    // TODO TO be clean, this needs a tuple (assembly, rpm) so that I can generate a Makefile
+    def makeDockerImage = { dockerfile_template_dir, rpm, output_dir ->
+            def docker_path_component = "docker"
+            def output = "$output_dir/$rpm.name"
+            copy {
+                from dockerfile_template_dir
+                into output
+                eachFile { FileCopyDetails fileCopyDetails ->
+                    if (fileCopyDetails.name == "Dockerfile") {
+                        filter { it.replaceAll('@RPM@', rpm.name) }
+                    }
+                    if (fileCopyDetails.name == "Makefile") {
+                        filter { it.replaceAll('VERSION', version) }
+                        filter { it.replaceAll('URL', 'docker.uibk.ac.at:443/zid/dmlt/avportal/mcs-server') }
+                    }
+                }
+            }
+        copy {
+            from rpm
+            into output
+        }
+    }
+
+    def dockerfile_template_dir = "$projectDir/docker"
+    def distributions = file("$buildDir/distributions")
+    def output_dir = "$buildDir/dockerbuild"
+    inputs.dir(dockerfile_template_dir)
+    outputs.dir(output_dir)
+
+    doLast {
+        distributions.eachFileRecurse {
+            println "Creating Dockerfile for distribution: " + it
+            makeDockerImage(dockerfile_template_dir, it, output_dir)
         }
     }
 }
@@ -366,7 +411,7 @@ setOfAssembledAssemblyFiles.forEach {
                 maintainer author
                 //distribution ''
                 vendor 'UIBK'
-                url 'https://git.uibk.ac.at/zid/dmlt/'
+                url url
                 //sourcePackage ''
                 version version
                 arch 'NOARCH'
@@ -384,7 +429,7 @@ setOfAssembledAssemblyFiles.forEach {
                 requires('sed')
                 requires('systemd')
                 requires('java-1.8.0-openjdk')
-                requires('maven')
+                //requires('maven')
 
                 user 'mcs'
                 permissionGroup 'root'
