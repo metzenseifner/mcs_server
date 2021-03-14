@@ -294,7 +294,7 @@ task makeDockerBuildDirsForRpms(group: 'docker') {
                     if (fileCopyDetails.name == "Dockerfile") {
                         filter { it.replaceAll('@RPM@', rpm.name) }
                     }
-                    if (fileCopyDetails.name == "Makefile") {
+                    if (fileCopyDetails.name == "Makefile" || fileCopyDetails.name == "mcs_docker_service.sh" || fileCopyDetails.name == "mcs_test_helper.sh") {
                         filter { it.replaceAll('VERSION', version) }
                         filter { it.replaceAll('URL', 'docker.uibk.ac.at:443/zid/dmlt/avportal/mcs-server') }
                     }
