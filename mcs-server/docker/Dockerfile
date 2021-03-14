@@ -11,11 +11,11 @@ ADD entrypoint.sh /entrypoint.sh
 RUN dnf install -y java-1.8.0-openjdk && \
     rpm -ivh --nodigest --nofiledigest /@RPM@ && \
     ln -s /usr/share/mcs/bin/client /usr/local/bin/client && \
+    chmod -R 777 /var/lib/mcs && \
     chmod +x /entrypoint.sh && \
     chown 0:0 /setpermissions && \
     chmod u+xs /setpermissions
 
-USER mcs
 WORKDIR ${MCS_BASE}
 
 VOLUME ["${MCS_BASE}/deploy","${MCS_BASE}/etc","${MCS_BASE}/data"]
