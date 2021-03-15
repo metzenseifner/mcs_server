@@ -13,6 +13,6 @@ docker service create \
   --publish 'mode=host,target=44444,published=44444' \
   --publish 'mode=host,target=5005,published=5005' \
   --env "TZ=Europe/Zurich" \
-  --mount type=bind,source=/dkr/containers.d/mcs/log,target=/usr/share/mcs/data/log \
+  --mount type=bind,source=/dkr/containers.d/mcs/log,target=/var/lib/mcs/log \
   --mount type=bind,source=/dkr/containers.d/mcs/etc,target=/usr/share/mcs/etc \
   $IMG
