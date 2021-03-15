@@ -143,4 +143,7 @@ public interface Recorder extends RecordingInstanceObserver {
     void sendMessage(SisProtocol.Settable recorderCommandsEnum, String value); // TODO: Ideally input is DublinCoreGetters property. Fails if not supported.
     @JsonIgnore
     void sendMessage(SisProtocol.Command recorderCommandEnum);
+
+    /** Yes, I need a destructor, because I need to unschedule threads. */
+    void destruct();
 }

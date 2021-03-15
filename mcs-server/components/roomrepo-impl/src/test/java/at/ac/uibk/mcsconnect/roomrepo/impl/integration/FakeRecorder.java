@@ -89,4 +89,7 @@ public class FakeRecorder implements Recorder {
     public String toString() {
         return String.format("%s(%s)", this.getClass().getSimpleName(), getId());
     }
+
+    @Override
+    public void destruct() {};
 }

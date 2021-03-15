@@ -117,6 +117,8 @@ public class UibkRoom implements Room {
         this.recorders = recorders;
         this.terminals = terminals;
         this.recordingInstance = Optional.empty(); // DEFAULT
+        // TODO This class should probably manage the threads for the recorders because outside code needs a way
+        // TODO to cancel existing recorder threads
     }
 
     /**
@@ -150,6 +152,11 @@ public class UibkRoom implements Room {
         //} catch (RejectedExecutionException e) {
         //    LOGGER.error("Submission of repetitively scheduled task rejected: {} {}", e.getMessage(), e.getCause());
         //}
+    }
+
+    @Override
+    public void destruct() {
+        this.recorders.stream().forEach(r -> r.destruct());
     }
 
     @Override

@@ -18,6 +18,7 @@ import at.ac.uibk.mcsconnect.sshsessionmanager.api.SshSessionManagerService;
 import com.fasterxml.jackson.annotation.JsonView;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
@@ -43,10 +44,12 @@ import java.util.stream.Stream;
 
 import static at.ac.uibk.mcsconnect.roomrepo.impl.hidden.YamlDtoAssembler.safeExtractSetResults;
 
+/**
+ * Supports live changes to the university's room topology.
+ */
 @Component(
         name = "at.ac.uibk.mcsconnect.roomrepo.impl.RoomServiceYamlImpl",
-        immediate = true,
-        scope = ServiceScope.SINGLETON
+        immediate = true
 )
 public class RoomRepoYamlImpl implements RoomRepo {
 
@@ -115,8 +118,16 @@ public class RoomRepoYamlImpl implements RoomRepo {
         handleProps(props);
     }
 
+    @Deactivate
+    public void deactivate() {
+        LOGGER.info(String.format("%s.deactivate() called", this));
+        cleanRegistry();
+    }
+
     /**
      * Algorithm must also remove old rooms (remember, its recorders have threads) cleanly.
+     *
+     * In particular, the scheduled threads must be cancelled.
      *
      * @param props
      */
@@ -155,9 +166,11 @@ public class RoomRepoYamlImpl implements RoomRepo {
 
     /**
      * Reset registry
+     *
      */
     private void cleanRegistry() {
         for (Room r : registry) {
+            r.destruct(); // Handles safe removal of threads
             remove(r.getId());
         }
         this.registry = new HashSet<>(); // wipe out old refs

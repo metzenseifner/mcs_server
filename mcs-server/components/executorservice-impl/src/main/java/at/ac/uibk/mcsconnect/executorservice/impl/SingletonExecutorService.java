@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +42,10 @@ public class SingletonExecutorService implements McsSingletonExecutorService, Mc
     // ONLY MADE PUBLIC BECAUSE OF OSGI DS
     public SingletonExecutorService() {
         this.mainExecutorService = new ExtendedThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MINUTES, workQueue, new ThreadFactoryImpl("McsConnect-WorkPool"), new ThreadPoolExecutor.CallerRunsPolicy());
-        this.scheduledExecutorService = Executors.newScheduledThreadPool(CORE_POOL_SIZE, new ThreadFactoryImpl("McsConnect-ScheduledPool")); // DOes not support Core pool vs Max Pool. Only fixed number of threads.
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(CORE_POOL_SIZE, new ThreadFactoryImpl("McsConnect-ScheduledPool")); // DOes not support Core pool vs Max Pool. Only fixed number of threads.
+        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = (ScheduledThreadPoolExecutor) scheduledExecutorService; //TODO ugly cast
+        scheduledThreadPoolExecutor.setRemoveOnCancelPolicy(true);
+        this.scheduledExecutorService = scheduledThreadPoolExecutor;
     }
 
     //public static SingletonExecutorService getInstance() {

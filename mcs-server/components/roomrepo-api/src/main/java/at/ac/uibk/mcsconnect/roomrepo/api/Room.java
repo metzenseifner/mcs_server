@@ -95,4 +95,9 @@ public interface Room {
      */
     void setRecordingInstance(Optional<RecordingInstance> newRecordingInstance);
 
+    /**
+     * Yes, I need a destructor because I need to unschedule threads.
+     */
+    void destruct();
+
 }

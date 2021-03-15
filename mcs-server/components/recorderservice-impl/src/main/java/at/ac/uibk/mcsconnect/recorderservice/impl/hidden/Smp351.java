@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -95,6 +97,7 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
     ));
     private final ScheduledExecutorService scheduledExecutorService;
     private final ExecutorService executorService;
+    private List<ScheduledFuture<?>> threadHandles;
 
 
     /**
@@ -133,7 +136,7 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
         // The SmpFetchable.enabledMethods are fetched to sync with the in-mem repr.
         // TODO should be pushed into a priority queue with lower priority than starting/stopping.
         for (Consumer<SmpFetchable> c : SmpFetchable.enabledMethods) {
-            scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS);
+            this.threadHandles.add(scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS));
         }
     }
 
@@ -153,6 +156,15 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
         } catch (RejectedExecutionException e) {
             throw new RejectedExecutionException(e);
         }
+    }
+
+    public void destruct() {
+        this.threadHandles.stream().forEach(
+                t -> {
+                    boolean isCancelled = t.cancel(false);// ScheduledFuture.cancel() ensures is that isDone method always return true
+                    LOGGER.info(String.format("Task %s cancelled? %s", t, isCancelled));
+                }
+        );
     }
 
     public static <T> Callable<Result<T>> makeCallable(Recorder recorder, Preparable<Recorder, T> preparable) {

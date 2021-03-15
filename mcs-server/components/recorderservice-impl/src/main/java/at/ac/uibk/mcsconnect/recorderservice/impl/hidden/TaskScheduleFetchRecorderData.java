@@ -13,7 +13,7 @@ import static at.ac.uibk.mcsconnect.common.api.StrUtils.swapNonPrintable;
 // Odd-ball
 
 
-public class TaskScheduleFetchRecorderData<O> implements CancellableRunnable {
+public class TaskScheduleFetchRecorderData<O> implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskScheduleFetchRecorderData.class);
 
@@ -28,16 +28,13 @@ public class TaskScheduleFetchRecorderData<O> implements CancellableRunnable {
     }
 
     public void run() {
-        LOGGER.debug(String.format("%s.run() called and scheduling function.", this));
         try {
+            LOGGER.debug(String.format("%s.run() called and scheduling function.", this));
             executorService.execute(() -> fetchFunction.accept(recorder));
         } catch (Exception e) {
-            LOGGER.error(String.format("%s.run() caught exception while executing: %s", this, fetchFunction.toString()), e);
+            LOGGER.warn(String.format("%s.run() caught exception while executing: %s", this, fetchFunction.toString()), e);
+            return;
         }
-    }
-
-    public void cancel() {
-        // TODO: implement me
     }
 
     @Override
