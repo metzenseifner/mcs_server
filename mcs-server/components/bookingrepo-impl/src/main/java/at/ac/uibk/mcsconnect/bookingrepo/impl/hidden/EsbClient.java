@@ -15,7 +15,7 @@ import java.net.URI;
 import java.util.Map;
 
 @Component(
-        name = "EsbClient",
+        name = "at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.EsbClient",
         immediate = true
 )
 public class EsbClient implements EsbClientCalls {
