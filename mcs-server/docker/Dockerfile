@@ -21,4 +21,5 @@ WORKDIR ${MCS_BASE}
 VOLUME ["${MCS_BASE}/deploy","${MCS_BASE}/etc","${MCS_BASE}/data"]
 EXPOSE 1099 8101 8181 44444 5005
 
-ENTRYPOINT ['/entrypoint.sh']
+# must be double quotes
+ENTRYPOINT ["/entrypoint.sh"]
