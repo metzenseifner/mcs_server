@@ -100,5 +100,10 @@ public class FakeRoom implements Room {
     }
 
     @Override
+    public String toFullString() {
+        return String.format("FakeRoom(%s, %s, %s, %s)", this.id, this.name, this.recorders, this.terminals);
+    }
+
+    @Override
     public void destruct() {};
 }

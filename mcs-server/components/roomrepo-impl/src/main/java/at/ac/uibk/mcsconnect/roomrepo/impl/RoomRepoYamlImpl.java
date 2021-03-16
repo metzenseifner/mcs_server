@@ -152,7 +152,7 @@ public class RoomRepoYamlImpl implements RoomRepo {
                     RoomsDTO roomsDTO = yamlRoomsDTOParser.loadAs(inputStream, RoomsDTO.class);
                     Set<Room> rooms = safeExtractSetResults(yamlDtoAssembler.toRoomSet(roomsDTO));
                     rooms.stream()
-                            .peek(r -> String.format("%s adding room to registry: %s", this, r))
+                            .peek(r -> String.format("%s adding room to registry: %s", this, r.toFullString()))
                             .forEach(r -> this.add(r));
                 } catch (IOException i) {
                     LOGGER.error(String.format("IO error while trying to read rooms path \"%s\", because %s", this.roomsDir, i));

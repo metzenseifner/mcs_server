@@ -100,4 +100,6 @@ public interface Room {
      */
     void destruct();
 
+    String toFullString();
+
 }
