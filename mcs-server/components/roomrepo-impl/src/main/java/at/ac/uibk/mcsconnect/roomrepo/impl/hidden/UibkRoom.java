@@ -413,7 +413,7 @@ public class UibkRoom implements Room {
     }
 
     private void notifyObserversOfMetadataChange(Metadata metadata) {
-        LOGGER.info("%s.notifyObserversOfMetadataChange(%s) called.", this, metadata);
+        LOGGER.info(String.format("%s.notifyObserversOfMetadataChange(%s) called.", this, metadata));
         this.recorders.stream().forEach(r -> r.onMetadataChange(metadata));
     }
     //private void notifyObserversOfMetadataChange() {
@@ -426,7 +426,7 @@ public class UibkRoom implements Room {
      * Converted old observer pattern into push system to help with better with DAG dep graph TODO rename me
      */
     private void notifyObserverOfRecordingRunningStateChange(RecorderRunningStatesEnum recorderRunningStatesEnum) {
-        LOGGER.info("%s.notifyObserverOfRecordingRunningStateChange(%s) called.", this, recorderRunningStatesEnum);
+        LOGGER.info(String.format("%s.notifyObserverOfRecordingRunningStateChange(%s) called.", this, recorderRunningStatesEnum));
         this.recorders.stream().forEach(r -> r.onRecorderRunningStateChange(recorderRunningStatesEnum));
     }
 
