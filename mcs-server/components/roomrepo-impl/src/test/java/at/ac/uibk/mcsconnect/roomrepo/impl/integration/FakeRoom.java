@@ -98,4 +98,7 @@ public class FakeRoom implements Room {
     public String toString() {
         return String.format("FakeRoom(%s, %s)", this.id, this.name);
     }
+
+    @Override
+    public void destruct() {};
 }
