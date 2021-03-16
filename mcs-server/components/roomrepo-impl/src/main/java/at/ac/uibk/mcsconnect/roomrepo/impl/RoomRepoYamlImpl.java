@@ -200,7 +200,7 @@ public class RoomRepoYamlImpl implements RoomRepo {
      */
     public Result<Boolean> add(Room room) {
         try {
-            LOGGER.info(String.format("%s.add(%s)", this, room));
+            LOGGER.info(String.format("%s.add(%s)", this, room.toFullString()));
             this.registry.add(room);
             return Result.success(true);
         } catch (Exception e) {
