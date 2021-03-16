@@ -44,10 +44,10 @@ public class UibkRoom implements Room {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UibkRoom.class);
 
-    private String id;
-    private String name;
-    private Set<Recorder> recorders = new HashSet<>();
-    private Set<Terminal> terminals = new HashSet<>();
+    private final String id;
+    private final String name;
+    private final Set<Recorder> recorders = new HashSet<>();
+    private final Set<Terminal> terminals = new HashSet<>();
 
     //@Schema(description = "This is the aggregated state of many recorder running states.", accessMode = Schema.AccessMode.READ_ONLY)
     private volatile RecorderRunningStatesEnum polledRecordingRunningState = RecorderRunningStatesEnum.UNKNOWN;
@@ -408,6 +408,7 @@ public class UibkRoom implements Room {
     }
 
     private void notifyObserversOfMetadataChange(Metadata metadata) {
+        LOGGER.info("%s.notifyObserversOfMetadataChange(%s) called.", this, metadata);
         this.recorders.stream().forEach(r -> r.onMetadataChange(metadata));
     }
     //private void notifyObserversOfMetadataChange() {
@@ -420,6 +421,7 @@ public class UibkRoom implements Room {
      * Converted old observer pattern into push system to help with better with DAG dep graph TODO rename me
      */
     private void notifyObserverOfRecordingRunningStateChange(RecorderRunningStatesEnum recorderRunningStatesEnum) {
+        LOGGER.info("%s.notifyObserverOfRecordingRunningStateChange(%s) called.", this, recorderRunningStatesEnum);
         this.recorders.stream().forEach(r -> r.onRecorderRunningStateChange(recorderRunningStatesEnum));
     }
 
