@@ -46,8 +46,8 @@ public class UibkRoom implements Room {
 
     private final String id;
     private final String name;
-    private final Set<Recorder> recorders = new HashSet<>();
-    private final Set<Terminal> terminals = new HashSet<>();
+    private final Set<Recorder> recorders;
+    private final Set<Terminal> terminals;
 
     //@Schema(description = "This is the aggregated state of many recorder running states.", accessMode = Schema.AccessMode.READ_ONLY)
     private volatile RecorderRunningStatesEnum polledRecordingRunningState = RecorderRunningStatesEnum.UNKNOWN;
