@@ -21,7 +21,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ServiceScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -48,7 +47,7 @@ import static at.ac.uibk.mcsconnect.roomrepo.impl.hidden.YamlDtoAssembler.safeEx
  * Supports live changes to the university's room topology.
  */
 @Component(
-        name = "at.ac.uibk.mcsconnect.roomrepo.impl.RoomServiceYamlImpl",
+        name = "at.ac.uibk.mcsconnect.roomrepo.impl.RoomRepoYamlImpl",
         immediate = true
 )
 public class RoomRepoYamlImpl implements RoomRepo {
