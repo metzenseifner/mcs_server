@@ -37,4 +37,8 @@ public class RoomDTO {
     public void setTerminals(Map<String, TerminalDTO> terminals) {
         this.terminals = terminals;
     }
+
+    public String toString() {
+        return String.format("%s(%s, %s, %s)", this.getClass().getSimpleName(), getName(), getRecorders(), getTerminals());
+    }
 }

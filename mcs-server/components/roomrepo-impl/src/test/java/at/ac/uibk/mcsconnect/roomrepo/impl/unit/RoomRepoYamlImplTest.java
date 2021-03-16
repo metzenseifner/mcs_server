@@ -5,6 +5,7 @@ import at.ac.uibk.mcsconnect.common.impl.integration.FakeNetworkTargetFactory;
 import at.ac.uibk.mcsconnect.executorservice.impl.integration.FakeMcsScheduledExecutorService;
 import at.ac.uibk.mcsconnect.executorservice.impl.integration.FakeMcsSingletonExecutorService;
 import at.ac.uibk.mcsconnect.functional.common.Result;
+import at.ac.uibk.mcsconnect.recorderservice.api.Recorder;
 import at.ac.uibk.mcsconnect.roomrepo.api.Room;
 import at.ac.uibk.mcsconnect.roomrepo.impl.hidden.YamlDtoAssembler;
 import at.ac.uibk.mcsconnect.roomrepo.impl.hidden.yamldto.RoomDTO;
@@ -26,6 +27,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -118,8 +120,13 @@ public class RoomRepoYamlImplTest {
             Result<Set<Result<Room>>> rRooms = yamlDtoAssembler.toRoomSet(roomsDTO);
             Set<Room> rooms = YamlDtoAssembler.safeExtractSetResults(rRooms);
             Optional<Room> oRoom = rooms.stream().filter(r -> r.getId().equals("avstudio")).findFirst();
-
             assertThat(oRoom.isPresent()).isTrue();
+
+            Room sut = oRoom.get();
+
+
+            assertThat(sut.getRecorders().size()).isEqualTo(2);
+            assertThat(sut.getTerminals().size()).isEqualTo(2);
 
         } catch (Exception e) {
             logError(e.getMessage());

@@ -1,4 +1,4 @@
-FROM centos:8
+FROM centos8:java8
 MAINTAINER Jonathan.Komar<AT>uibk.ac.at
 
 ENV MCS_BASE=/usr/share/mcs
@@ -9,8 +9,7 @@ ADD @RPM@ /
 ADD setpermissions /setpermissions
 ADD entrypoint.sh /entrypoint.sh
 
-RUN dnf install -y java-1.8.0-openjdk && \
-    rpm -ivh --nodigest --nofiledigest /@RPM@ && \
+RUN rpm -ivh --nodigest --nofiledigest /@RPM@ && \
     chmod -R 777 /var/lib/mcs && \
     chmod +x /entrypoint.sh && \
     chown 0:0 /setpermissions && \

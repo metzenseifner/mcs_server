@@ -19,6 +19,8 @@ import at.ac.uibk.mcsconnect.sshsessionmanager.api.SshSessionManagerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.HostnameVerifier;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -53,10 +55,10 @@ public final class YamlDtoAssembler {
         this.mcsSingletonExecutorService = mcsSingletonExecutorService;
     }
 
-    public Result<Set<Result<Terminal>>> toTerminalSet(RoomDTO roomDTO) {
+    public Result<Set<Terminal>> toTerminalSet(RoomDTO roomDTO) {
         Result<RoomDTO> rRoomDTO = Result.of(roomDTO);
         return rRoomDTO.map(r -> r.getTerminals()).flatMap(terminals -> {
-            Set<Result<Terminal>> output = new HashSet<>();
+            Set<Terminal> output = new HashSet<>();
             for (Map.Entry<String, TerminalDTO> tdto : terminals.entrySet()) {
                 Result<TerminalDTO> rTdto = Result.of(tdto.getValue(), String.format("Missing TerminalDTO: %s", tdto));
                 Result<String> rId = Result.of(tdto.getKey(), String.format("Missing id in %s", tdto));
@@ -66,21 +68,27 @@ public final class YamlDtoAssembler {
                         .flatMap(id -> rName
                             .flatMap(name -> rTarget
                                 .map(target -> this.terminalFactory.create(id, name, target))));
-                output.add(rTerminal);
+                if (rTerminal.isFailure()) return Result.failure(String.format("%s.toTerminalSet(%s) failed to parse: %s, because %s", this, roomDTO, tdto, rTerminal.failureValue()));
+                output.add(rTerminal.successValue());
             }
             return Result.success(output);
         });
     }
 
-    public Result<Set<Result<Recorder>>> toRecorderSet(RoomDTO roomDTO) {
+    public Result<Set<Recorder>> toRecorderSet(RoomDTO roomDTO) { // TODO changed to Result<Set<Recorder>> because it should return a set or bust
         Result<RoomDTO> rRoomDTO = Result.of(roomDTO);
         return rRoomDTO.map(r -> r.getRecorders()).flatMap(recorders -> {
-            Set<Result<Recorder>> output = new HashSet<>();
-            for (Map.Entry<String, RecorderDTO> rEntry : recorders.entrySet()) {
-                Result<RecorderDTO> rDto = Result.of(rEntry.getValue(),String.format("Missing RecorderDTO: %s", rEntry));
-                Result<String> rId = Result.of(rEntry.getKey(), String.format("Missing id in %s", rEntry));
+            Set<Recorder> output = new HashSet<>();
+            for (Map.Entry<String, RecorderDTO> rdto : recorders.entrySet()) {
+                Result<RecorderDTO> rDto = Result.of(rdto.getValue(),String.format("Missing RecorderDTO: %s", rdto));
+                Result<String> rId = Result.of(rdto.getKey(), String.format("Missing id in %s", rdto));
                 Result<String> rName = rDto.map(dto -> dto.getName());
-                Result<NetworkTarget> rNetworkTarget = rDto.map(dto -> dto.getTarget()).map(ntDTO -> networkTargetFactory.create(ntDTO.getHost(), Integer.valueOf(ntDTO.getPort()), ntDTO.getUsername(), ntDTO.getPassword()));
+                Result<NetworkTarget> rNetworkTarget = rDto
+                        .flatMap(recorderDTO -> Result.of(recorderDTO.getTarget(), String.format("Could not get target in recorder dto: %s", recorderDTO))
+                                .flatMap(targetDTO -> stringToInteger(targetDTO.getPort())
+                                        .flatMap(port -> liftString(targetDTO.getHost())
+                                                .flatMap(host -> liftString(targetDTO.getUsername()).flatMap(username -> liftString(targetDTO.getPassword())
+                                                        .map(password -> networkTargetFactory.create(host, port, username, password)))))));
                 Result<SshSessionManagerService> rSshSessionManagerService = Result.of(sshSessionManagerService, "SshSessionManagerService may not be null.");
                 Result<McsScheduledExecutorService> rMcsScheduledExecutorService = Result.of(mcsScheduledExecutorService, "McsScheduledExecutorService may not be null.");
                 Result<McsSingletonExecutorService> rMcsSingletonExecutorService = Result.of(mcsSingletonExecutorService, "McsSingletonExecutorService may not be null.");
@@ -92,9 +100,32 @@ public final class YamlDtoAssembler {
                                                 .flatMap(mcsscheduled -> rMcsSingletonExecutorService
                                                         .flatMap(mcsexec -> rRecorderFactory
                                                             .map(recFactory -> recFactory.create(id, name, nt, sshservice, mcsscheduled, mcsexec))))))));
-                output.add(rRecorder);
+                if (rRecorder.isFailure()) return Result.failure(String.format("%s.toRecorderSet(%s) failed to parse: %, because %s", this, roomDTO, rdto, rRecorder.failureValue()));
+                output.add(rRecorder.successValue());
             }
             return Result.success(output);
+        });
+    }
+
+    private static Result<Integer> stringToInteger(String input) {
+        Result<String> rInput = Result.of(input);
+        return rInput.flatMap(s -> {
+            try {
+                return Result.success(Integer.valueOf(s));
+            } catch (Exception e) {
+                return Result.failure(String.format("Could not parse string \"%s\" as integer, because %s\n%s", input, e, e.getStackTrace()));
+            }
+        });
+    }
+
+    private static Result<String> liftString(String input) {
+        Result<String> rInput = Result.of(input);
+        return rInput.flatMap(s -> {
+            try {
+                return Result.success(s);
+            } catch (Exception e) {
+                return Result.failure(String.format("Could not parse string \"%s\", because %s\n%s", input, e, e.getStackTrace()));
+            }
         });
     }
 
@@ -106,13 +137,13 @@ public final class YamlDtoAssembler {
                 Result<String> rId = Result.of(entry.getKey(), String.format("Missing RecorderDTO: %s", entry));
                 Result<RoomDTO> rDto = Result.of(entry.getValue(), String.format("Missing RoomDTO: %s", entry));
                 Result<String> rName = rDto.map(dto -> dto.getName());
-                Result<Set<Result<Terminal>>> rTerminals = rDto.flatMap(dto -> toTerminalSet(dto));
-                Result<Set<Result<Recorder>>> rRecorders = rDto.flatMap(dto -> toRecorderSet(dto));
+                Result<Set<Terminal>> rTerminals = rDto.flatMap(dto -> toTerminalSet(dto));
+                Result<Set<Recorder>> rRecorders = rDto.flatMap(dto -> toRecorderSet(dto));
                 Result<RoomFactory> rRoomFactory = Result.of(roomFactory, String.format("RoomFactory may not be null."));
                 Result<Room> rRoom = rId.flatMap(id -> rName
                         .flatMap(name -> rTerminals
                                 .flatMap(terminals -> rRecorders
-                                        .flatMap(recorders -> rRoomFactory.map(roomFac -> roomFac.create(id, name, safeExtractSetResults(recorders), safeExtractSetResults(terminals)))))));
+                                        .flatMap(recorders -> rRoomFactory.map(roomFac -> roomFac.create(id, name, recorders, terminals))))));
                 output.add(rRoom);
             }
             return Result.success(output);
@@ -122,7 +153,8 @@ public final class YamlDtoAssembler {
     public static <T> Set<T> safeExtractSetResults(Set<Result<T>> input) {
             Set<T> output = new HashSet<>();
             for (Result<T> elem : input) {
-                elem.forEachOrFail(t -> output.add(t)).forEach(YamlDtoAssembler::logError);
+                if (elem.isFailure()) YamlDtoAssembler.logError(String.format("safeExtractSetResults: %s", elem.failureValue()));
+                elem.forEachOrFail(t -> output.add(t)).forEach(errMsg -> YamlDtoAssembler.logError(String.format("safeExtractSetResults failed with: %s", errMsg)));
             }
             return output;
     }
@@ -131,7 +163,8 @@ public final class YamlDtoAssembler {
         Result<Set<T>> realOut = input.map(inputSet -> {
             Set<T> output = new HashSet<>();
             for (Result<T> elem : inputSet) {
-                elem.forEachOrFail(t -> output.add(t)).forEach(YamlDtoAssembler::logError);
+                if (elem.isFailure()) YamlDtoAssembler.logError(String.format("safeExtractSetResults: %s", elem.failureValue()));
+                elem.forEachOrFail(t -> output.add(t)).forEach(errMsg -> YamlDtoAssembler.logError(String.format("safeExtractSetResults failed with: %s", errMsg)));
             }
             return output;
         });

@@ -166,7 +166,7 @@ public class UibkRoom implements Room {
 
     @Override
     public String toFullString() {
-        return String.format("UibkRoom(%s, %s, %s, %s)", id, name, recorders, terminals);
+        return String.format("UibkRoom(%s, %s, %s, %s)", this.id, this.name, this.recorders, this.terminals);
     }
 
     @Override
