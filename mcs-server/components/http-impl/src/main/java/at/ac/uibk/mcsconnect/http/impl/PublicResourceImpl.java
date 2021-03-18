@@ -14,7 +14,6 @@ import at.ac.uibk.mcsconnect.http.impl.hidden.mapper.RequestUtilities;
 import at.ac.uibk.mcsconnect.http.impl.hidden.mapper.VersionOneAdapter;
 import at.ac.uibk.mcsconnect.person.api.User;
 import at.ac.uibk.mcsconnect.person.api.UserFactory;
-import at.ac.uibk.mcsconnect.recorderservice.api.RecorderRunningStatesEnum;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstance;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceFactory;
