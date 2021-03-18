@@ -209,7 +209,8 @@ public class PublicResourceImpl implements PublicResourceApi {
     public Response getPolledRecordingRunningState(Configuration contextConfiguration, String roomId) {
         Result<Room> room = roomRepo.get(roomId);
         //return Response.ok("{ \"runningState\" : \"RECORDING\" }").type(MediaType.APPLICATION_JSON).build();
-        return Response.ok(RecorderRunningStatesEnum.RECORDING).build();
+        //return Response.ok(RecorderRunningStatesEnum.RECORDING).build();
+        return Response.status(Response.Status.NOT_IMPLEMENTED).build();
     }
 
     @Override
