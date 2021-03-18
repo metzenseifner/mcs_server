@@ -188,7 +188,7 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
 
     @Override
     public String toString() {
-        return String.format("%s(%s, %s)", getClass().getSimpleName(), getId(), getName());
+        return String.format("%s(%s, %s, %s)", getClass().getSimpleName(), getId(), getName(), getNetworkTarget());
     }
 
     @Override

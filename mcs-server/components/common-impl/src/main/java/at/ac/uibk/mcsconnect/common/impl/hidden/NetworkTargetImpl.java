@@ -40,6 +40,6 @@ public class NetworkTargetImpl implements NetworkTarget {
 
     @Override
     public String toString() {
-        return String.format("%s, %s", this.host, this.port);
+        return String.format("%s(%s, %s, %s, %s)", this.getClass().getSimpleName(), this.host, this.port, "Username logging disabled", "Password logging disabled");
     }
 }

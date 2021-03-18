@@ -158,8 +158,8 @@ public final class YamlDtoAssembler {
 
     /** Utilites (migrated out of DTOs to conform to JavaBeans Specifications) */
     public static Function<RecorderDTO, Result<String>> getRecorderName = x -> Result.of(x.getName(), "recorderDTO name may not be null");
-    public static Function<RecorderDTO, Result<String>> getRecorderTypeResult = x -> Result.of(x.getName(), "recorderDTO type may not be null");
-    public static Function<RecorderDTO, Result<String>> getRecorderNetworkTargetResult = x -> Result.of(x.getName(), "recorderDTO network target may not be null");
+    public static Function<RecorderDTO, Result<String>> getRecorderTypeResult = x -> Result.of(x.getType(), "recorderDTO type may not be null");
+    public static Function<RecorderDTO, Result<NetworkTargetDTO>> getRecorderNetworkTargetResult = x -> Result.of(x.getNetworkTarget(), "recorderDTO network target may not be null");
 
     /** Operation: Tuple<String, RecorderDTO> -> Result<Recorder */
     private Result<Terminal> terminalDTOToTerminal(Tuple<Result<String>, Result<TerminalDTO>> entry) {
