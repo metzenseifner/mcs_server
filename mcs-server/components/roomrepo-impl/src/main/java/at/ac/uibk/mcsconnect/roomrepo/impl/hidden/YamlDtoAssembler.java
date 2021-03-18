@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashSet;
 import java.util.Set;
 
-import static at.ac.uibk.mcsconnect.functional.common.List.sequence;
+import static at.ac.uibk.mcsconnect.functional.common.List.*;
 
 public final class YamlDtoAssembler {
 
@@ -60,9 +60,9 @@ public final class YamlDtoAssembler {
     }
 
     public Result<Set<Terminal>> toTerminalSet(RoomDTO roomDTO) {
-        Map<String, TerminalDTO> unsafeMap = Map.fromJavaMap(roomDTO.getTerminals());
+        Map<Result<String>, Result<TerminalDTO>> unsafeMap = Map.fromJavaMap(roomDTO.getTerminals());
 
-        List<Tuple<String, TerminalDTO>> tuples = unsafeMap.entries();
+        List<Tuple<Result<String>, Result<TerminalDTO>>> tuples = unsafeMap.entries();
         List<Result<Terminal>> uncheckedResult = tuples.map(e -> terminalDTOToTerminal(e));
 
         Result<Set<Terminal>> results = sequence(uncheckedResult).map(List::toJavaSet);
@@ -73,8 +73,8 @@ public final class YamlDtoAssembler {
     }
 
     public Result<Set<Recorder>> toRecorderSet(RoomDTO roomDTO) { // TODO changed to Result<Set<Recorder>> because it should return a set or bust
-        Map<String, RecorderDTO> unsafeMap = Map.fromJavaMap(roomDTO.getRecorders());
-        List<Tuple<String, RecorderDTO>> tuples = unsafeMap.entries();
+        Map<Result<String>, Result<RecorderDTO>> unsafeMap = Map.fromJavaMap(roomDTO.getRecorders());
+        List<Tuple<Result<String>,  Result<RecorderDTO>>> tuples = unsafeMap.entries();
         List<Result<Recorder>> uncheckedResult = tuples.map(e -> recorderDTOToRecorder(e));
 
 
@@ -108,13 +108,14 @@ public final class YamlDtoAssembler {
     }
 
     public Set<Room> toRoomSet(RoomsDTO roomsDTO) { // TODO Return set of rooms or bust? Return set of rooms that were read in correctly?
-        Map<String, RoomDTO> unsafeMap = Map.fromJavaMap(roomsDTO.getRooms());
-        List<Tuple<String, RoomDTO>> tuples = unsafeMap.entries();
+        Map<Result<String>, Result<RoomDTO>> safeMap = Map.fromJavaMap(roomsDTO.getRooms());
+        List<Tuple<Result<String>, Result<RoomDTO>>> tuples = safeMap.entries();
         List<Result<Room>> uncheckedResult = tuples.map(e -> roomDtoToRoom(e));
 
         Result<Set<Room>> results = sequence(uncheckedResult).map(List::toJavaSet);
 
-        results.forEachOrFail(r -> logInfo(String.format("Converted yaml to room: %s", r))).forEach(error -> String.format("Could not process all rooms from in-memory representation: %s, because %s", roomsDTO, error));
+        results.forEachOrFail(r -> logInfo(String.format("Converted yaml to room: %s", r)))
+                .forEach(error -> logError(String.format("Could not process all rooms from in-memory representation: %s, because %s", roomsDTO, error)));
 
         return results.isSuccess()
                 ?  results.successValue()
@@ -122,33 +123,37 @@ public final class YamlDtoAssembler {
     }
 
     /** Operation: Tuple<String, RoomDTO> -> Result<Room> | string is the id (key in yaml) and RoomDTO is the value at that key. This function can be lifted for all entries. */
-    private Result<Room> roomDtoToRoom(Tuple<String, RoomDTO> entry) {
-        return Result.of(entry._1, String.format("id may not be null"))
-                .flatMap(id -> Result.of(entry._2, String.format("value at id \"%s\" (the RoomDTO) may not be null", id))
+    private Result<Room> roomDtoToRoom(Tuple<Result<String>, Result<RoomDTO>> entry) {
+        Result<Room> rRoom = entry._1
+                .flatMap(id -> entry._2
                         .flatMap(roomDto -> getRoomNameResult.apply(roomDto)
                                 .flatMap(name -> toRecorderSet(roomDto)
                                         .flatMap(recorders -> toTerminalSet(roomDto)
                                                 .flatMap(terminals -> this.roomFactory
                                                         .map(roomFac -> roomFac.create(id, name, recorders, terminals)))))));
+        rRoom.forEachOrFail(r -> logInfo(String.format("roomDtoToRoom created room: %s", r))).forEach(errMsg -> logError(String.format("roomDtoToRoom failed to create room: %s", errMsg)));
+        return rRoom;
     }
     /** Utilites (migrated out of DTOs to conform to JavaBeans Specifications) */
     public static Function<RoomDTO, Result<String>> getRoomNameResult = x -> Result.of(x.getName(), "recorderDTO name may not be null");
 
 
     /** Operation: Tuple<String, RecorderDTO> -> Result<Recorder */
-    private Result<Recorder> recorderDTOToRecorder(Tuple<String, RecorderDTO> entry) {
-        return Result.of(entry._1, String.format("id may not be null"))
-                .flatMap(id -> Result.of(entry._2, String.format("value at id \"%s\" (the RecorderDTO) may not be null", id))
-                        .flatMap(recorderDto -> getRecorderName.apply(recorderDto)
-                                .flatMap(name -> getRecorderTypeResult.apply(recorderDto)
-                                    .flatMap(type -> networkTargetFactory
-                                        .flatMap(ntFactory -> getRecorderNetworkTargetResult.apply(recorderDto)
-                                                .flatMap(ntDto -> dtoToNetworkTarget(ntFactory, ntDto)
-                                                        .flatMap(nt -> sshSessionManagerService
-                                                            .flatMap(sshSessMangr -> mcsScheduledExecutorService
-                                                                    .flatMap(schedExecService -> mcsSingletonExecutorService
-                                                                            .flatMap(singleExecService -> recorderFactory
-                                                                                    .map(recFactory -> recFactory.create(id, name, nt, sshSessMangr, schedExecService, singleExecService))))))))))));
+    private Result<Recorder> recorderDTOToRecorder(Tuple<Result<String>, Result<RecorderDTO>> entry) {
+        Result<Recorder> rRecorder = entry._1.mapFailure("Invalid recorder id")
+                .flatMap(id -> entry._2.mapFailure("Invalid recorderDto")
+                        .flatMap(recorderDto -> getRecorderName.apply(recorderDto).mapFailure("Invalid recorder name")
+                                .flatMap(name -> getRecorderTypeResult.apply(recorderDto).mapFailure("Invalid recorder type")
+                                    .flatMap(type -> networkTargetFactory.mapFailure("Invalid networkTargetFactory")
+                                        .flatMap(ntFactory -> getRecorderNetworkTargetResult.apply(recorderDto).mapFailure("Invalid network target result")
+                                                .flatMap(ntDto -> dtoToNetworkTarget(ntFactory, ntDto).mapFailure("Invalid dtoToNetworkTarget")
+                                                        .flatMap(nt -> sshSessionManagerService.mapFailure("Invalid sshSessionManagerService")
+                                                            .flatMap(sshSessMangr -> mcsScheduledExecutorService.mapFailure("Invalid mcsScheduledExecutorService")
+                                                                    .flatMap(schedExecService -> mcsSingletonExecutorService.mapFailure("Invalid mcsSingletonExecutorService")
+                                                                            .flatMap(singleExecService -> recorderFactory.mapFailure("Invalid recorderFactory")
+                                                                                    .map(recFactory -> recFactory.create(id, name, nt, sshSessMangr, schedExecService, singleExecService)))))))))))); //.mapFailure(String.format("recorderDTOToRecorder failed to create recorder at: %s, from %s", entry._1, entry._2));
+        rRecorder.forEachOrFail(r -> logInfo(String.format("recorderDTOToRecorder created recorder: %s", r))).forEach(errMsg -> logError(String.format("recorderDTOToRecorder failed to create recorder: %s, at: %s, from %s", errMsg, entry._1, entry._2)));
+        return rRecorder;
     }
 
     /** Utilites (migrated out of DTOs to conform to JavaBeans Specifications) */
@@ -157,15 +162,17 @@ public final class YamlDtoAssembler {
     public static Function<RecorderDTO, Result<String>> getRecorderNetworkTargetResult = x -> Result.of(x.getName(), "recorderDTO network target may not be null");
 
     /** Operation: Tuple<String, RecorderDTO> -> Result<Recorder */
-    private Result<Terminal> terminalDTOToTerminal(Tuple<String, TerminalDTO> entry) {
-        return Result.of(entry._1, String.format("id may not be null"))
-                .flatMap(id -> Result.of(entry._2, String.format("value at id \"%s\" (the TerminalDTO) may not be null", id))
+    private Result<Terminal> terminalDTOToTerminal(Tuple<Result<String>, Result<TerminalDTO>> entry) {
+         Result<Terminal> rTerminal = entry._1
+                .flatMap(id -> entry._2
                         .flatMap(terminalDto -> getTerminalNameResult.apply(terminalDto)
                                 .flatMap(name -> networkTargetFactory
                                     .flatMap(ntFactory -> getTerminalTargetResult.apply(terminalDto)
                                         .flatMap(ntDto -> dtoToNetworkTarget(ntFactory, ntDto)
                                                 .flatMap(nt -> terminalFactory
                                                     .map(termFactory -> termFactory.create(id, name, nt))))))));
+        rTerminal.forEachOrFail(r -> logInfo(String.format("terminalDTOToTerminal created terminal: %s", r))).forEach(errMsg -> logError(String.format("terminalDTOToTerminal failed to create terminal: %s", errMsg)));
+        return rTerminal;
     }
 
     /** Utilites (migrated out of DTOs to conform to JavaBeans Specifications) */
@@ -175,11 +182,13 @@ public final class YamlDtoAssembler {
 
     /** Helper Network Target */
     private static Result<NetworkTarget> dtoToNetworkTarget(NetworkTargetFactory factory, NetworkTargetDTO dto) {
-        return getHostResult.apply(dto)
+         Result<NetworkTarget> rNetworkTarget = getHostResult.apply(dto)
                 .flatMap(host -> getPortResult.apply(dto)
                     .flatMap(port -> getUsernameResult.apply(dto)
                         .flatMap(username -> getPasswordResult.apply(dto)
                                 .flatMap(password -> factory.create(host, port, username, password)))));
+        rNetworkTarget.forEachOrFail(r -> logInfo(String.format("dtoToNetworkTarget created network target: %s", r))).forEach(errMsg -> logError(String.format("dtoToNetworkTarget failed to create network target: %s", errMsg)));
+        return rNetworkTarget;
     }
     /** Utilites (migrated out of DTOs to conform to JavaBeans Specifications) */
     public static Function<NetworkTargetDTO, Result<String>> getHostResult = x -> Result.of(x.getHost(), "networkTargetDTO host may not be null");

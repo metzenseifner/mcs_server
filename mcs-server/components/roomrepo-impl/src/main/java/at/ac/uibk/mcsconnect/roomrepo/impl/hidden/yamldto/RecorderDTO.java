@@ -34,4 +34,8 @@ public class RecorderDTO implements Serializable {
     public void setType(String type) {
         this.type = type;
     }
+
+    public String toString() {
+        return String.format("%s(%s, %s, %s)", this.getClass().getSimpleName(), getName(), getType(), getNetworkTarget());
+    }
 }

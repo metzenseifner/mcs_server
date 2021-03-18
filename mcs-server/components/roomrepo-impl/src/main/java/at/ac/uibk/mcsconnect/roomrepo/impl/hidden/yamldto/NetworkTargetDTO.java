@@ -42,4 +42,8 @@ public class NetworkTargetDTO implements Serializable {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public String toString() {
+        return String.format("%s(%s, %s, %s, %s)", this.getClass().getSimpleName(), getHost(), getPort(), getUsername(), "Cannot log passwords!");
+    }
 }

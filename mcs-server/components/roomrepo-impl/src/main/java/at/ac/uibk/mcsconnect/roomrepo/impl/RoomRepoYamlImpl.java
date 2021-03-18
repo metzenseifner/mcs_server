@@ -139,9 +139,10 @@ public class RoomRepoYamlImpl implements RoomRepo {
             Set<Path> roomFiles = stream
                     .filter(p -> Files.isRegularFile(p))
                     .collect(Collectors.toSet());
-            LOGGER.info(String.format("Found %s rooms", roomFiles.size()));
+            LOGGER.info(String.format("Found %s rooms: %s", roomFiles.size(), roomFiles));
 
             for (Path p : roomFiles) {
+                LOGGER.info(String.format("Processing room yaml at: %s", p));
                 try (InputStream inputStream = new FileInputStream(p.toFile())) {
                     ;
                     /** exception=Class not found even when on classpath, see https://stackoverflow.com/questions/26463078/snakeyaml-class-not-found-exception */
@@ -149,8 +150,9 @@ public class RoomRepoYamlImpl implements RoomRepo {
                     Yaml yamlRoomsDTOParser = new Yaml(new CustomClassLoaderConstructor(RoomsDTO.class.getClassLoader()));
                     RoomsDTO roomsDTO = yamlRoomsDTOParser.loadAs(inputStream, RoomsDTO.class);
                     Set<Room> rooms = yamlDtoAssembler.toRoomSet(roomsDTO);
+                    LOGGER.info(String.format("Created rooms: %s", rooms));
                     rooms.stream()
-                            .peek(r -> String.format("%s adding room to registry: %s", this, r.toFullString()))
+                            .peek(r -> LOGGER.info(String.format("%s adding room to registry: %s", this, r.toFullString())))
                             .forEach(r -> this.add(r));
                 } catch (IOException i) {
                     LOGGER.error(String.format("IO error while trying to read rooms path \"%s\", because %s", this.roomsDir, i));

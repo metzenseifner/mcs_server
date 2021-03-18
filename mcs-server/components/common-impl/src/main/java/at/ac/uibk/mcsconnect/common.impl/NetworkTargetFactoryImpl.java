@@ -35,10 +35,13 @@ public class NetworkTargetFactoryImpl implements NetworkTargetFactory {
 
     @Override
     public Result<NetworkTarget> create(String host, String port, String username, String password) {
-        Result<String> rHost = Result.of(host);
-        Result<Integer> rPort = StrUtils.parseAsInteger(port);
-        Result<String> rUsername = Result.of(username);
-        Result<String> rPassword = Result.of(password);
-        return rHost.flatMap(h -> rPort.flatMap(p -> rUsername.flatMap(usr -> rPassword.map(pass -> new NetworkTargetImpl(h, p, usr, pass)))));
+        Result<String> rHost = Result.of(host, "Host may not be null");
+        Result<Integer> rPort = StrUtils.parseAsInteger(port).mapFailure("Port could not be parsed as an integer");
+        Result<String> rUsername = Result.of(username, "Username may not be null.");
+        Result<String> rPassword = Result.of(password, "Password may not be null.");
+        return rHost.flatMap(h -> rPort
+                .flatMap(p -> rUsername
+                        .flatMap(usr -> rPassword
+                                .map(ps -> new NetworkTargetImpl(h, p, usr, ps)))));
     }
 }

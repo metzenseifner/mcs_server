@@ -133,11 +133,15 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
     }
 
     public void init() {
+        LOGGER.info(String.format("%s.init() called.", this.getClass().getSimpleName()));
         // The SmpFetchable.enabledMethods are fetched to sync with the in-mem repr.
         // TODO should be pushed into a priority queue with lower priority than starting/stopping.
         for (Consumer<SmpFetchable> c : SmpFetchable.enabledMethods) {
-            this.threadHandles.add(scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS));
+            //this.threadHandles.add(); // TODO; Causes constructor to not return
+            scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS);
         }
+        LOGGER.info(String.format("%s.init() returning.", this.getClass().getSimpleName()));
+        return;
     }
 
     /**
@@ -154,6 +158,7 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
                     timeUnit);
             return future;
         } catch (RejectedExecutionException e) {
+            LOGGER.error(String.format("Could not schedule thread: %s", task));
             throw new RejectedExecutionException(e);
         }
     }

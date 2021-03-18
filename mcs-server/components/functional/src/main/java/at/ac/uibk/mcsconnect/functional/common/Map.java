@@ -82,10 +82,10 @@ public class Map<T, U> {
     return entries().foldLeft(identity, f);
   }
 
-  public static <T, U> Map<T, U> fromJavaMap(java.util.Map<T, U> javaMap) {
-    Map<T, U> output = new Map<T, U>();
+  public static <T, U> Map<Result<T>, Result<U>> fromJavaMap(java.util.Map<T, U> javaMap) {
+    Map<Result<T>, Result<U>> output = new Map<Result<T>, Result<U>>();
     for (java.util.Map.Entry<T, U> entry: javaMap.entrySet()) {
-      output.put(entry.getKey(), entry.getValue());
+      output.put(Result.of(entry.getKey(), String.format("Invalid key for entry: %s", entry)), Result.of(entry.getValue(), String.format("Invalid value for entry: %s", entry)));
     }
     return output;
   }
