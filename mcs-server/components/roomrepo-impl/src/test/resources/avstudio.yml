@@ -6,7 +6,7 @@ rooms:
       r_avstudio_01:
         name: "Main"
         type: "smp351"
-        target:
+        networkTarget:
           host: "138.232.11.205"
           port: "22023"
           username: "test"
@@ -14,7 +14,7 @@ rooms:
       r_avstudio_02:
         name: "Side"
         type: "smp351"
-        target:
+        networkTarget:
           host: "138.232.11.2"
           port: "22023"
           username: "test"
