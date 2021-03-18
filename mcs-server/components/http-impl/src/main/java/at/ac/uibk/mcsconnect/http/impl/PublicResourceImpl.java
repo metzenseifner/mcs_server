@@ -14,7 +14,6 @@ import at.ac.uibk.mcsconnect.http.impl.hidden.mapper.RequestUtilities;
 import at.ac.uibk.mcsconnect.http.impl.hidden.mapper.VersionOneAdapter;
 import at.ac.uibk.mcsconnect.person.api.User;
 import at.ac.uibk.mcsconnect.person.api.UserFactory;
-import at.ac.uibk.mcsconnect.recorderservice.api.RecorderRunningStatesEnum;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstance;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceConfiguration;
 import at.ac.uibk.mcsconnect.roomrepo.api.RecordingInstanceFactory;
@@ -209,7 +208,8 @@ public class PublicResourceImpl implements PublicResourceApi {
     public Response getPolledRecordingRunningState(Configuration contextConfiguration, String roomId) {
         Result<Room> room = roomRepo.get(roomId);
         //return Response.ok("{ \"runningState\" : \"RECORDING\" }").type(MediaType.APPLICATION_JSON).build();
-        return Response.ok(RecorderRunningStatesEnum.RECORDING).build();
+        //return Response.ok(RecorderRunningStatesEnum.RECORDING).build();
+        return Response.status(Response.Status.NOT_IMPLEMENTED).build();
     }
 
     @Override
