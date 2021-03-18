@@ -7,8 +7,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 // TODO Set me up...I am a noncritical component
 @Component(
         name = "at.ac.uibk.mcsconnect.common.impl.McsConfigurationImpl",
-        immediate = true,
-        scope = ServiceScope.SINGLETON
+        immediate = true
 )
 public class McsConfigurationImpl implements McsConfiguration {
     public String getVersion() {

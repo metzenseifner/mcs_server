@@ -21,8 +21,7 @@ import java.util.concurrent.TimeUnit;
  * of threads to support the dynamic nature of the room configuration.
  */
 @Component(
-        name = "at.ac.uibk.mcsconnect.executorservice.impl.SingletonExecutorService",
-        scope = ServiceScope.SINGLETON
+        name = "at.ac.uibk.mcsconnect.executorservice.impl.SingletonExecutorService"
 )
 public class SingletonExecutorService implements McsSingletonExecutorService, McsScheduledExecutorService {
 

@@ -1,16 +1,15 @@
 package at.ac.uibk.mcsconnect.roomrepo.impl.hidden.yamldto;
 
-
-import java.util.Map;
+import java.io.Serializable;
 
 /** Room identifier is key for this value in RoomsDTO.rooms */
-public class RoomDTO {
+public class RoomDTO implements Serializable {
 
     private String name;
+
     /** Where String is useless name of set */
-    private Map<String, RecorderDTO> recorders;
-    /** Where String is useless name of set */
-    private Map<String, TerminalDTO> terminals;
+    public java.util.Map<String, RecorderDTO> recorders;
+    public java.util.Map<String, TerminalDTO> terminals;
 
     public RoomDTO() {}
 
@@ -22,19 +21,19 @@ public class RoomDTO {
         this.name = name;
     }
 
-    public Map<String, RecorderDTO> getRecorders() {
-        return recorders;
+    public java.util.Map<String, RecorderDTO> getRecorders() {
+        return this.recorders;
     }
 
-    public void setRecorders(Map<String, RecorderDTO> recorders) {
+    public void setRecorders(java.util.Map<String, RecorderDTO> recorders) {
         this.recorders = recorders;
     }
 
-    public Map<String, TerminalDTO> getTerminals() {
+    public java.util.Map<String, TerminalDTO> getTerminals() {
         return terminals;
     }
 
-    public void setTerminals(Map<String, TerminalDTO> terminals) {
+    public void setTerminals(java.util.Map<String, TerminalDTO> terminals) {
         this.terminals = terminals;
     }
 

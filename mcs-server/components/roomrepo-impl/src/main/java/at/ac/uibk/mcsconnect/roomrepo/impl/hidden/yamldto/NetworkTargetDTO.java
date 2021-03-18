@@ -1,6 +1,9 @@
 package at.ac.uibk.mcsconnect.roomrepo.impl.hidden.yamldto;
 
-public class NetworkTargetDTO {
+import java.io.Serializable;
+
+public class NetworkTargetDTO implements Serializable {
+
     private String host;
     private String port;
     private String username;

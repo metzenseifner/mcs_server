@@ -1,12 +1,12 @@
 package at.ac.uibk.mcsconnect.common.api;
 
+import at.ac.uibk.mcsconnect.functional.common.Function;
 import at.ac.uibk.mcsconnect.functional.common.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.Function;
 
 /**
  * This class is intended to provide an efficient and thread-safe

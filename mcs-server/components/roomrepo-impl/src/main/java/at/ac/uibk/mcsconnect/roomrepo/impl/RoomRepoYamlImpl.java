@@ -41,8 +41,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static at.ac.uibk.mcsconnect.roomrepo.impl.hidden.YamlDtoAssembler.safeExtractSetResults;
-
 /**
  * Supports live changes to the university's room topology.
  */
@@ -150,7 +148,7 @@ public class RoomRepoYamlImpl implements RoomRepo {
                     //Yaml yamlRoomsDTOParser = new Yaml(new Constructor(RoomsDTO.class));
                     Yaml yamlRoomsDTOParser = new Yaml(new CustomClassLoaderConstructor(RoomsDTO.class.getClassLoader()));
                     RoomsDTO roomsDTO = yamlRoomsDTOParser.loadAs(inputStream, RoomsDTO.class);
-                    Set<Room> rooms = safeExtractSetResults(yamlDtoAssembler.toRoomSet(roomsDTO));
+                    Set<Room> rooms = yamlDtoAssembler.toRoomSet(roomsDTO);
                     rooms.stream()
                             .peek(r -> String.format("%s adding room to registry: %s", this, r.toFullString()))
                             .forEach(r -> this.add(r));

@@ -1,10 +1,13 @@
 package at.ac.uibk.mcsconnect.roomrepo.impl.hidden.yamldto;
 
-public class RecorderDTO {
+import java.io.Serializable;
+
+
+public class RecorderDTO implements Serializable {
     private String name;
     private String type; // TODO Currently unused because there is only one type of recorder
     /** Where String in submap is "target" */
-    private NetworkTargetDTO target;
+    private NetworkTargetDTO networkTarget;
 
     public RecorderDTO() {}
 
@@ -16,12 +19,12 @@ public class RecorderDTO {
         this.name = name;
     }
 
-    public NetworkTargetDTO getTarget() {
-        return target;
+    public NetworkTargetDTO getNetworkTarget() {
+        return networkTarget;
     }
 
-    public void setTarget(NetworkTargetDTO target) {
-        this.target = target;
+    public void setNetworkTarget(NetworkTargetDTO networkTarget) {
+        this.networkTarget = networkTarget;
     }
 
     public String getType() {

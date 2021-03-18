@@ -14,6 +14,7 @@ import at.ac.uibk.mcsconnect.roomrepo.api.Terminal;
 import at.ac.uibk.mcsconnect.roomrepo.api.TerminalFactory;
 import at.ac.uibk.mcsconnect.sshsessionmanager.api.SshSessionManagerService;
 import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 //@Component(
-//        name = "at.ac.uibk.mcsconnect.roomservice.impl.RoomServiceInMemoryImpl",
-//        scope = ServiceScope.SINGLETON,
+//        name = "at.ac.uibk.mcsconnect.roomrepo.impl.RoomRepoInMemoryImpl",
 //        immediate = true
 //)
 public class RoomRepoInMemoryImpl implements RoomRepo {
@@ -70,19 +70,19 @@ public class RoomRepoInMemoryImpl implements RoomRepo {
     public void setup() {
         // init recorders
         Set<Recorder> recorders = new HashSet<>();
-        NetworkTarget main_nt = networkTargetFactory.create("138.232.11.205", 22023, "abc", "");
-        NetworkTarget side_nt = networkTargetFactory.create("138.232.11.2", 22023, "abc", "");
+        NetworkTarget main_nt = networkTargetFactory.create("172.27.40.47", 22023, "", "");
+        NetworkTarget side_nt = networkTargetFactory.create("172.27.40.48", 22023, "", "");
         SshSessionManagerService sshSessionManagerService = this.sshSessionManagerService;
-        recorders.add(recorderFactory.create("r_avstudio_01", "Main", main_nt, sshSessionManagerService, mcsScheduledExecutorService, mcsSingletonExecutorService));
-        recorders.add(recorderFactory.create("r_avstudio_02", "Side", side_nt, sshSessionManagerService, mcsScheduledExecutorService, mcsSingletonExecutorService));
+        recorders.add(recorderFactory.create("r_geiwimzwr_01", "Main", main_nt, sshSessionManagerService, mcsScheduledExecutorService, mcsSingletonExecutorService));
+        recorders.add(recorderFactory.create("r_geiwimzwr_02", "Side", side_nt, sshSessionManagerService, mcsScheduledExecutorService, mcsSingletonExecutorService));
 
         // init terminals
         Set<Terminal> terminals = new HashSet<>();
-        terminals.add(terminalFactory.create("localhost", "localhost", networkTargetFactory.create("127.0.0.1")));
+        terminals.add(terminalFactory.create("t_zid-sr173", "PC Geiwi Mehrzweckraum", networkTargetFactory.create("138.232.123.29")));
 
         // init rooms (id -> Room) for O(1) performance
         Map<String, Room> tempRoomMap = new HashMap<>();
-        tempRoomMap.put("avstudio", roomFactory.create("avstudio", "AV Studio", recorders, terminals));
+        tempRoomMap.put("geiwimzwr", roomFactory.create("geiwimzwr", "Geiwi Mehrzweckraum", recorders, terminals));
         this.registry = tempRoomMap;
     }
 

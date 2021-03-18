@@ -1,20 +1,21 @@
 package at.ac.uibk.mcsconnect.roomrepo.impl.hidden.yamldto;
 
 
-import java.util.Map;
+import java.io.Serializable;
 
-public class RoomsDTO {
+public class RoomsDTO implements Serializable {
+
     /** Where String is the room identifier */
-    private Map<String, RoomDTO> rooms;
+    private java.util.Map<String, RoomDTO> rooms;
 
     public RoomsDTO() {
     }
 
-    public Map<String, RoomDTO> getRooms() {
+    public java.util.Map<String, RoomDTO> getRooms() {
         return rooms;
     }
 
-    public void setRooms(Map<String, RoomDTO> rooms) {
+    public void setRooms(final java.util.Map<String, RoomDTO> rooms) {
         this.rooms = rooms;
     }
 }

@@ -3,10 +3,9 @@ package at.ac.uibk.mcsconnect.common.impl;
 import at.ac.uibk.mcsconnect.common.api.Preparable;
 import at.ac.uibk.mcsconnect.common.api.PreparableFactory;
 import at.ac.uibk.mcsconnect.common.api.PreparableCacheImpl;
+import at.ac.uibk.mcsconnect.functional.common.Function;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-
-import java.util.function.Function;
 
 @Component(
         name = "at.ac.uibk.mcsconnect.common.impl.PreparableFactoryCacheImpl",

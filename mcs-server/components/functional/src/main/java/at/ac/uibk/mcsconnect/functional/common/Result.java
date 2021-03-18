@@ -2,7 +2,6 @@ package at.ac.uibk.mcsconnect.functional.common;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public abstract class Result<T> implements Serializable {
@@ -497,10 +496,10 @@ public abstract class Result<T> implements Serializable {
         : Result.failure("Null value");
   }
 
-  public static <T> Result<T> of(final T value, final String message) {
+  public static <T> Result<T> of(final T value, final String errMsg) {
     return value != null
         ? Result.success(value)
-        : Result.failure(message);
+        : Result.failure(errMsg);
   }
 
   public static <A, B> Function<Result<A>, Result<B>> lift(final Function<A, B> f) {

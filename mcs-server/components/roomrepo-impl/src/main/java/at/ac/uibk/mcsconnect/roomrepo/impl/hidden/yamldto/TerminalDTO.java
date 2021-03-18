@@ -1,7 +1,11 @@
 package at.ac.uibk.mcsconnect.roomrepo.impl.hidden.yamldto;
 
+
+import java.io.Serializable;
+
 /** Identifier for this terminal is the key in TerminalsDTO */
-public class TerminalDTO {
+public class TerminalDTO implements Serializable {
+
     private String name;
     private String target;
 

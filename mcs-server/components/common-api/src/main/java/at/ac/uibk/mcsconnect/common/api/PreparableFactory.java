@@ -1,6 +1,6 @@
 package at.ac.uibk.mcsconnect.common.api;
 
-import java.util.function.Function;
+import at.ac.uibk.mcsconnect.functional.common.Function;
 
 /**
  *
