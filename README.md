@@ -33,6 +33,10 @@ This project is a multi-project Gradle build.
 To build mcs-server, run `gradle build`. The RPMs will land under `mcs-server/build/distributions`.
 The Apache Karaf KAR files are created per assembly under `mcs-server/build/assemblies/<name>/kar`.
 
+# Other Documentation
+
+This is part of the project, "AV Portal", whose plan can be found under [Arbeitspaket:
+AV-Portal](https://sp.uibk.ac.at/sites/zid/nml/avportal/_layouts/15/start.aspx#/Lists/Arbeitspakete%202021/AllItems.aspx). The project's wiki documentation can be found at [AV-Portal Wiki](https://wiki.uibk.ac.at/display/zidecamptec/AV-Portal).
 
 # Infrastructure Checklist
 
