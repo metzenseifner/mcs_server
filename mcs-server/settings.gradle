@@ -7,7 +7,7 @@
  * pluginManagement.plugins {} does not have the same constrained syntax as the build script plugins {} block.
  * This allows plugin versions to be taken from gradle.properties, or loaded via another mechanism.
  */
-pluginManagement { // must be first block in file (or as init script)
+pluginManagement { // must be first block in file (or as init script) DefaultPluginManagementSpec.java
     repositories {
         mavenLocal()
         mavenCentral()
