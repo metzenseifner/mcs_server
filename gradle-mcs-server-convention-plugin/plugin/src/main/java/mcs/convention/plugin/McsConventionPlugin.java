@@ -30,8 +30,11 @@ import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.tasks.Jar;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -209,9 +212,12 @@ public class McsConventionPlugin implements Plugin<Project> {
         });
 
         JavaPluginConvention jpc = project.getConvention().getPlugin(JavaPluginConvention.class);
-
         jpc.setSourceCompatibility(JAVA_VERSION);
         jpc.setTargetCompatibility(JAVA_VERSION);
+
+        project.getTasks().withType(JavaCompile.class).forEach(j -> {
+            j.getOptions().setEncoding(StandardCharsets.UTF_8.toString());
+        });
 
         String repoUser = (String) project.getProperties().get(REPO_USER);
         String repoPassword = (String) project.getProperties().get(REPO_PASSWORD);
