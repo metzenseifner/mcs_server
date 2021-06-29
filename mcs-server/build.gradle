@@ -1,6 +1,5 @@
 // READ https://github.com/bndtools/bnd/blob/master/biz.aQute.bnd.gradle/README.md#gradle-plugin-for-non-bnd-workspace-builds
 
-
 /**
  * If you have a multi-project build, you probably want to apply plugins to some or all of
  * the subprojects in your build, but not to the root project. The default behavior of the
@@ -11,7 +10,7 @@
 plugins {
     id 'java'
     id "nebula.ospackage" version "8.5.6"
-    id 'mcs.convention.plugin.standard' version "${mcsPluginVersion}"
+    id 'mcs.convention.plugin.standard' version "1.0.5" //"${mcsPluginVersion}"
 }
 final gitBranch = "git rev-parse --abbrev-ref HEAD".execute().text.trim()
 final gitTag = "git describe HEAD".execute().text.trim() // git describe HEAD
