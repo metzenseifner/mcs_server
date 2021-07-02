@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Interface class to communicate with recorder objects
+ * Interface class to communicate with recorder objects.
  *
  * By implementing the {@link RecordingInstanceObserver},
  * the recorders can be notified of changes to the recording instance
@@ -21,6 +21,14 @@ import com.fasterxml.jackson.annotation.JsonView;
  * @since 28.01.2019
  */
 public interface Recorder extends RecordingInstanceObserver {
+
+    /**
+     * Initializer method to activate the recorder.
+     * For example, to start synchronization threads for
+     * recorder/hardware-specific interface.
+     */
+    @JsonView(Views.Admin.class)
+    void init();
 
     /**
      * Gets id of device.

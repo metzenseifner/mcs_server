@@ -20,6 +20,8 @@ public class RecorderFactoryImpl implements RecorderFactory {
                            SshSessionManagerService sshSessionManager,
                            McsScheduledExecutorService scheduledExecutorService,
                            McsSingletonExecutorService singletonExecutorService) {
-        return Smp351.create(id, name, networkTargetUserPass, sshSessionManager, scheduledExecutorService, singletonExecutorService);
+        Recorder recorder = Smp351.create(id, name, networkTargetUserPass, sshSessionManager, scheduledExecutorService, singletonExecutorService);
+        recorder.init();
+        return recorder;
     }
 }

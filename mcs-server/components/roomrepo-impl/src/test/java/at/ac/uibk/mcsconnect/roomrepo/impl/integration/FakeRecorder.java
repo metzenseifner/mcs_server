@@ -7,7 +7,7 @@ import at.ac.uibk.mcsconnect.recorderservice.api.Recorder;
 import at.ac.uibk.mcsconnect.recorderservice.api.RecorderRunningStatesEnum;
 import at.ac.uibk.mcsconnect.recorderservice.api.SisProtocol;
 
-public class FakeRecorder implements Recorder {
+public  class FakeRecorder implements Recorder {
 
     private String id;
     private String name;
@@ -34,6 +34,8 @@ public class FakeRecorder implements Recorder {
         this.networkTarget = networkTarget;
         this.recorderRunningState = initialState;
     }
+
+    public void init() {};
 
     @Override
     public void onMetadataChange(Metadata metadata) {

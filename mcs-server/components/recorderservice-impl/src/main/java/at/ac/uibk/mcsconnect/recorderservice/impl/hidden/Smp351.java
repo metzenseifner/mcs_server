@@ -129,16 +129,19 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
         this.sshSessionManagerService = sshSessionManagerService;
         this.scheduledExecutorService = scheduledExecutiveService.getScheduledExecutorService();
         this.executorService = singletonExecutorService.getExecutorService();
-        this.init(); // THIS METHOD STARTS UP THE SYNC THREADS (SMP OBJS SHOULD MANAGE THEIR OWN COMPLICATED CONNECTIVITY)
     }
 
+    /**
+     * THIS METHOD STARTS UP THE SYNC THREADS (SMP OBJS SHOULD MANAGE THEIR OWN COMPLICATED CONNECTIVITY)
+     */
     public void init() {
         LOGGER.info(String.format("%s.init() called.", this.getClass().getSimpleName()));
         // The SmpFetchable.enabledMethods are fetched to sync with the in-mem repr.
         // TODO should be pushed into a priority queue with lower priority than starting/stopping.
         for (Consumer<SmpFetchable> c : SmpFetchable.enabledMethods) {
             //this.threadHandles.add(); // TODO; Causes constructor to not return
-            scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS);
+            ScheduledFuture scheduledRef = scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS);
+            threadHandles.add(scheduledRef);
         }
         LOGGER.info(String.format("%s.init() returning.", this.getClass().getSimpleName()));
         return;
