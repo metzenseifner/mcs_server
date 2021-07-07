@@ -33,6 +33,16 @@ This project is a multi-project Gradle build.
 To build mcs-server, run `gradle build`. The RPMs will land under `mcs-server/build/distributions`.
 The Apache Karaf KAR files are created per assembly under `mcs-server/build/assemblies/<name>/kar`.
 
+A couple of notes: The main build requires a convention plugin, also defined in
+this project. It suffices to build it and store it in a local Maven repository.
+The convention plugin helps keep to manage versions of dependencies, and to
+maintain consistency accross components and their dependencies. Also, because
+of a quirk in the Karaf Plugin, it is required to first run `gradle build` on
+the assembly projects first. The problem has to do with the fact that the
+author of this plugin adds files to the subproject's (assembly's) dependency
+configuration in the "after project" phase. These build dependencies are not
+caught by the top-level project. This should be fixed at some point.
+
 # Other Documentation
 
 This is part of the project, "AV Portal", whose plan can be found under [Arbeitspaket:
