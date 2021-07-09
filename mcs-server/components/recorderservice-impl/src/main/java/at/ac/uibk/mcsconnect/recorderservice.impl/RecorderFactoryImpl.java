@@ -9,6 +9,11 @@ import at.ac.uibk.mcsconnect.recorderservice.impl.hidden.Smp351;
 import at.ac.uibk.mcsconnect.sshsessionmanager.api.SshSessionManagerService;
 import org.osgi.service.component.annotations.Component;
 
+/**
+ * This is a factory designed for creating real {@link Recorder} objects.
+ *
+ * For testing, you'd likely want to skip the init() function.
+ */
 @Component(
         name = "at.ac.uibk.mcsconnect.recorderservice.impl.RecorderFactoryImpl"
 )
