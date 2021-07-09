@@ -46,6 +46,17 @@ import java.util.regex.Matcher;
  * This
  * keeps the complicated code isolated here, but also complicates this class.
  *
+ * TODO: KNOWN PROBLEM: when SMP sends the % character to Opencast,
+ * it sends it as a single character, but Opencast server interprets the %
+ * as a special character that introduces a HEX number. It
+ * expects the HEX number to be two digits.
+ * Instead of the SMP sending “§$%&” it should send “§$%25&”,
+ * where 25 is the hex number for “%”. Therefore, if a % is needed in the
+ * metadata that must be manually set to %25.
+ *
+ * The SMP should be able to handle at least the following characters:
+ * abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!"#$&'()*+,-./:;<=>?@[\]^_`{}~ẞßÜüÅåÆæÄäØøÖö
+ *
  * <p>
  * The {@link this#enabledSettableFields} is merely an abstraction of {@link SisProtocol.Settable} to allow
  * separation between what is "possible" and what is currently "enabled". This separation could be easily
@@ -97,8 +108,8 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
     ));
     private final ScheduledExecutorService scheduledExecutorService;
     private final ExecutorService executorService;
-    private List<ScheduledFuture<?>> threadHandles;
-
+    /**  initialize to empty list in case caller does not call init(), but calls destruct() */
+    private List<ScheduledFuture<?>> threadHandles = new ArrayList<>();
 
     /**
      * Factory that initializes SMP with the minimum requirements.
@@ -134,17 +145,14 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
     /**
      * THIS METHOD STARTS UP THE SYNC THREADS (SMP OBJS SHOULD MANAGE THEIR OWN COMPLICATED CONNECTIVITY)
      */
-    public void init() {
-        LOGGER.info(String.format("%s.init() called.", this.getClass().getSimpleName()));
-        // The SmpFetchable.enabledMethods are fetched to sync with the in-mem repr.
+    public final void init() {
+        LOGGER.debug(String.format("%s.init() called.", this));
         // TODO should be pushed into a priority queue with lower priority than starting/stopping.
         for (Consumer<SmpFetchable> c : SmpFetchable.enabledMethods) {
             //this.threadHandles.add(); // TODO; Causes constructor to not return
-            ScheduledFuture scheduledRef = scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS);
-            threadHandles.add(scheduledRef);
+            ScheduledFuture<?> scheduledRef = scheduleThread(new TaskScheduleFetchRecorderData(this, c, executorService), 5L, 15L, TimeUnit.SECONDS);
+            this.threadHandles.add(scheduledRef);
         }
-        LOGGER.info(String.format("%s.init() returning.", this.getClass().getSimpleName()));
-        return;
     }
 
     /**
@@ -170,7 +178,11 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
         this.threadHandles.stream().forEach(
                 t -> {
                     boolean isCancelled = t.cancel(false);// ScheduledFuture.cancel() ensures is that isDone method always return true
-                    LOGGER.info(String.format("Task %s cancelled? %s", t, isCancelled));
+                    if (isCancelled) {
+                        LOGGER.info("Task %s for %s was cancelled successfully.", t, this);
+                    } else {
+                        LOGGER.error("Task %s for %s was not cancelled successfully.", t, this);
+                    }
                 }
         );
     }
