@@ -1,7 +1,9 @@
 package at.ac.uibk.mcsconnect.functional.common;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
@@ -18,7 +20,7 @@ public class Map<T, U> {
   private final ConcurrentMap<T, U> map = new ConcurrentHashMap<>();
 
   public static <T, U> Map<T, U> empty() {
-    return new Map<>();
+    return new Map<T, U>();
   }
 
   public static <T, U> Map<T, U> add(Map<T, U> m, T t, U u) {
@@ -82,12 +84,22 @@ public class Map<T, U> {
     return entries().foldLeft(identity, f);
   }
 
+  /**
+   *
+   * @param javaMap non-functional, good-ole unsafe {@link java.util.Map}, could be null
+   * @param <T> key, could be null
+   * @param <U> value, could be null
+   * @return empty {@link Map} if javaMap is null or empty, otherwise populated {@link Map} with {@link java.util.Map} entries.
+   */
   public static <T, U> Map<Result<T>, Result<U>> fromJavaMap(java.util.Map<T, U> javaMap) {
-    Map<Result<T>, Result<U>> output = new Map<Result<T>, Result<U>>();
-    for (java.util.Map.Entry<T, U> entry: javaMap.entrySet()) {
-      output.put(Result.of(entry.getKey(), String.format("Invalid key for entry: %s", entry)), Result.of(entry.getValue(), String.format("Invalid value for entry: %s", entry)));
+    Result<java.util.Map> rJavaMap = Result.of(javaMap);
+    java.util.Map<T, U> semiSafeMap = rJavaMap.getOrElse(() -> new java.util.HashMap());
+    Map<Result<T>, Result<U>> output = Map.empty();
+    for (java.util.Map.Entry<T, U> entry: semiSafeMap.entrySet()) {
+      output.put(
+              Result.of(entry.getKey(), String.format("Invalid key for entry: %s", entry)),
+              Result.of(entry.getValue(), String.format("Invalid value for entry: %s", entry)));
     }
     return output;
   }
-
 }
