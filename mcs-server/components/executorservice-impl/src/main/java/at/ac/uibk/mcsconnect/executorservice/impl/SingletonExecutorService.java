@@ -40,8 +40,8 @@ public class SingletonExecutorService implements McsSingletonExecutorService, Mc
     @Activate
     // ONLY MADE PUBLIC BECAUSE OF OSGI DS
     public SingletonExecutorService() {
-        this.mainExecutorService = new ExtendedThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MINUTES, workQueue, new ThreadFactoryImpl("McsConnect-WorkPool"), new ThreadPoolExecutor.CallerRunsPolicy());
-        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(CORE_POOL_SIZE, new ThreadFactoryImpl("McsConnect-ScheduledPool")); // DOes not support Core pool vs Max Pool. Only fixed number of threads.
+        this.mainExecutorService = new ExtendedThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MINUTES, workQueue, new ThreadFactoryImpl("mcs_work_pool"), new ThreadPoolExecutor.CallerRunsPolicy());
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(CORE_POOL_SIZE, new ThreadFactoryImpl("mcs_scheduled_pool")); // DOes not support Core pool vs Max Pool. Only fixed number of threads.
         ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = (ScheduledThreadPoolExecutor) scheduledExecutorService; //TODO ugly cast
         scheduledThreadPoolExecutor.setRemoveOnCancelPolicy(true);
         this.scheduledExecutorService = scheduledThreadPoolExecutor;

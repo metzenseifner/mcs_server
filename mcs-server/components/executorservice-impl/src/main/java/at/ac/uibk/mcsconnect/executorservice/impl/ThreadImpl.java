@@ -14,14 +14,14 @@ public class ThreadImpl extends Thread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadImpl.class);
 
-    public static final String DEFAULT_NAME = "mcsconnect-thread";
+    public static final String DEFAULT_NAME = "mcsconnect_thread";
     private static final AtomicInteger created = new AtomicInteger();
     private static final AtomicInteger alive = new AtomicInteger();
 
     public ThreadImpl(Runnable r) { this(r, DEFAULT_NAME); }
 
     public ThreadImpl(Runnable runnable, String name) {
-        super(runnable, name + "-ThreadCount: " + created.incrementAndGet());
+        super(runnable, name + "_thread_" + created.incrementAndGet());
         setUncaughtExceptionHandler(
                 new Thread.UncaughtExceptionHandler() {
                     public void uncaughtException(Thread t, Throwable e) {
