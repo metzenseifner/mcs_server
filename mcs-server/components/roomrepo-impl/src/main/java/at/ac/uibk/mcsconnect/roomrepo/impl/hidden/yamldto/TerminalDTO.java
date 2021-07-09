@@ -26,4 +26,9 @@ public class TerminalDTO implements Serializable {
     public void setTarget(String target) {
         this.target = target;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s(%s, %s)", this.getClass().getSimpleName(), getName(), getTarget());
+    }
 }
