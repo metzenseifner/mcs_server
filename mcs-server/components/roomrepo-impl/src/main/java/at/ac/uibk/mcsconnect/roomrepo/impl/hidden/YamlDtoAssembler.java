@@ -60,27 +60,28 @@ public final class YamlDtoAssembler {
     }
 
     public Result<Set<Terminal>> toTerminalSet(RoomDTO roomDTO) {
-        Map<Result<String>, Result<TerminalDTO>> unsafeMap = Map.fromJavaMap(roomDTO.getTerminals());
+        Map<Result<String>, Result<TerminalDTO>> safeMap = Map.fromJavaMap(roomDTO.getTerminals());
 
-        List<Tuple<Result<String>, Result<TerminalDTO>>> tuples = unsafeMap.entries();
+        List<Tuple<Result<String>, Result<TerminalDTO>>> tuples = safeMap.entries();
         List<Result<Terminal>> uncheckedResult = tuples.map(e -> terminalDTOToTerminal(e));
 
         Result<Set<Terminal>> results = sequence(uncheckedResult).map(List::toJavaSet);
 
-        results.forEachOrFail(r -> logInfo(String.format("Converted yaml to terminals: %s", r))).forEach(error -> String.format("Could not process all terminals from in-memory representation: %s, because %s", roomDTO, error));
+        results.forEachOrFail(r -> logInfo(String.format("Converted yaml data to terminals of room: %s", r))).forEach(error -> String.format("Could not process all terminals from in-memory representation: %s, because %s", roomDTO, error));
 
         return results;
     }
 
+    /** Extract the set of Recorder objects from a RoomDTO */
     public Result<Set<Recorder>> toRecorderSet(RoomDTO roomDTO) { // TODO changed to Result<Set<Recorder>> because it should return a set or bust
-        Map<Result<String>, Result<RecorderDTO>> unsafeMap = Map.fromJavaMap(roomDTO.getRecorders());
-        List<Tuple<Result<String>,  Result<RecorderDTO>>> tuples = unsafeMap.entries();
+        Map<Result<String>, Result<RecorderDTO>> safeMap = Map.fromJavaMap(roomDTO.getRecorders()); // map or empty map
+        List<Tuple<Result<String>,  Result<RecorderDTO>>> tuples = safeMap.entries();
         List<Result<Recorder>> uncheckedResult = tuples.map(e -> recorderDTOToRecorder(e));
 
 
         Result<Set<Recorder>> results = sequence(uncheckedResult).map(List::toJavaSet);
 
-        results.forEachOrFail(r -> logInfo(String.format("Converted recorders of room: %s", r))).forEach(error -> String.format("Could not process all recorders from in-memory representation: %s, because %s", roomDTO, error));
+        results.forEachOrFail(r -> logInfo(String.format("Converted yaml data to recorders of room: %s", r))).forEach(error -> String.format("Could not process all recorders from in-memory representation: %s, because %s", roomDTO, error));
 
         return results;
     }
@@ -152,7 +153,8 @@ public final class YamlDtoAssembler {
                                                                     .flatMap(schedExecService -> mcsSingletonExecutorService.mapFailure("Invalid mcsSingletonExecutorService")
                                                                             .flatMap(singleExecService -> recorderFactory.mapFailure("Invalid recorderFactory")
                                                                                     .map(recFactory -> recFactory.create(id, name, nt, sshSessMangr, schedExecService, singleExecService)))))))))))); //.mapFailure(String.format("recorderDTOToRecorder failed to create recorder at: %s, from %s", entry._1, entry._2));
-        rRecorder.forEachOrFail(r -> logInfo(String.format("recorderDTOToRecorder created recorder: %s", r))).forEach(errMsg -> logError(String.format("recorderDTOToRecorder failed to create recorder: %s, at: %s, from %s", errMsg, entry._1, entry._2)));
+        rRecorder.forEachOrFail(r -> logInfo(String.format("recorderDTOToRecorder created recorder: %s", r)))
+                .forEach(errMsg -> logError(String.format("recorderDTOToRecorder failed to create recorder: %s, at: %s, from %s", errMsg, entry._1, entry._2)));
         return rRecorder;
     }
 
@@ -202,6 +204,9 @@ public final class YamlDtoAssembler {
 
     private static void logInfo(String msg) {
         LOGGER.info(msg);
+    }
+    private static void logDebug(String msg) {
+        LOGGER.debug(msg);
     }
     private static void logError(String msg) {
         LOGGER.error(msg);
