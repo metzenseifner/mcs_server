@@ -157,6 +157,7 @@ public class UibkRoom implements Room {
     @Override
     public void destruct() {
         this.recorders.stream().forEach(r -> r.destruct());
+        LOGGER.info(String.format("%s destroyed", this));
     }
 
     @Override
