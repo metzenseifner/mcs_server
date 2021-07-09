@@ -1,0 +1,25 @@
+---
+rooms:
+  mehrzweckraum:
+    name: "Mehrzweckraum"
+    recorders:
+      r_mehrzweckraum_01:
+        name: "Main"
+        type: "smp351"
+        networkTarget:
+          host: "120.20.0.30"
+          port: "22023"
+          username: "changeme"
+          password: "changeme"
+      r_mehrzweckraum_02:
+        name: "Side"
+        type: "smp351"
+        networkTarget:
+          host: "120.20.0.31"
+          port: "22023"
+          username: "changeme"
+          password: "changeme"
+    terminals:
+      t_hostname:
+        name: "Mehrzweckraum Terminal"
+        target: "119.14.1.10"
