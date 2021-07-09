@@ -106,6 +106,11 @@ public class RoomRepoYamlImpl implements RoomRepo {
         this.sshSessionManagerService = sshSessionManagerService;
         this.mcsScheduledExecutorService = mcsScheduledExecutorService;
         this.mcsSingletonExecutorService = mcsSingletonExecutorService;
+    }
+
+    @Activate
+    public void activate(Map<String, ?> props) {
+        LOGGER.info(String.format("%s.activate() called", this));
         handleProps(props);
     }
 
@@ -168,7 +173,9 @@ public class RoomRepoYamlImpl implements RoomRepo {
      *
      */
     private void cleanRegistry() {
+        LOGGER.debug(String.format("%s.cleanRegistry() called.", this.getClass().getSimpleName()));
         for (Room r : registry) {
+            LOGGER.info(String.format("%s destroying: %s", this.getClass().getSimpleName(), r));
             r.destruct(); // Handles safe removal of threads
             remove(r.getId());
         }
