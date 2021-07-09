@@ -13,7 +13,9 @@ RUN rpm -ivh --nodigest --nofiledigest /@RPM@ && \
     chmod -R 777 /var/lib/mcs && \
     chmod +x /entrypoint.sh && \
     chown 0:0 /setpermissions && \
-    chmod u+xs /setpermissions
+    chmod u+xs /setpermissions && \
+    dnf clean all && \
+    rm -rf /var/cache/yum
 
 WORKDIR ${MCS_BASE}
 
