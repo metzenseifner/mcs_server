@@ -12,6 +12,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.UriBuilder;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 
 @Component(
@@ -32,6 +33,7 @@ public class EsbClient implements EsbClientCalls {
     private String esbPassword;
     private URI esbUri;
 
+    private static String CONFIG_HELP_METADATA_FORMATTER = "%s setting \"%s\" to \"%s\"";
     //private final URI esbBaseTarget = URI.create("https://texassa2.uibk.ac.at/cxf/vle-connect/sis"); // base path
     //private Secrets secrets;
 
@@ -45,11 +47,37 @@ public class EsbClient implements EsbClientCalls {
        handleProperties(properties);
     }
 
+    /** Update OSGI config */
     private void handleProperties(Map<String,?> properties) {
+        Map<String, String> configurationMetadata = defineProperties(properties);
+        printConfigurationMetadata(configurationMetadata);
+    }
+
+    /**
+     * Sets member variables and returns metadata about the current state.
+     *
+     * Do not call me directly. Should be delegated to by {@link this#handleProperties(Map)}.
+     *
+     * @param properties OSGI properties map
+     * @return {@link Map<String, String>} of config metadata
+     */
+    private Map<String, String> defineProperties(Map<String,?> properties) {
         OsgiPropertyReader reader = OsgiPropertyReader.create(properties);
         this.esbUsername = reader.getAsString(CFG_ESB_USERNAME).getOrElse(EsbClientDefaults.DEFAULT_ESB_USERNAME);
         this.esbPassword = reader.getAsString(CFG_ESB_PASSWORD).getOrElse(EsbClientDefaults.DEFAULT_ESB_PASSWORD);
         this.esbUri = reader.getAsURI(CFG_ESB_URL).getOrElse(EsbClientDefaults.DEFAULT_ESB_URL);
+
+        Map<String, String> configMetadata = new HashMap<>();
+        configMetadata.put("esbUsername", this.esbUsername);
+        configMetadata.put("esbPassword", this.esbPassword);
+        configMetadata.put("esbUri", this.esbUri.toString());
+        return configMetadata;
+    }
+
+    /** Prints help metadata returned after defining member variables in {@link this#defineProperties(Map)} */
+    private void printConfigurationMetadata(Map<String, String> configurationMetadata) {
+        configurationMetadata.entrySet().stream()
+                .forEach(e -> LOGGER.info(CONFIG_HELP_METADATA_FORMATTER, e.getKey(), e.getValue()));
     }
 
     @Override
@@ -77,4 +105,5 @@ public class EsbClient implements EsbClientCalls {
     public String toString() {
         return this.getClass().getSimpleName();
     }
+
 }
