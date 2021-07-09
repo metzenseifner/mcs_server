@@ -16,20 +16,24 @@ configurations {
         transitive true
     }
     karafDeployment {
-        canBeConsumed = true
+        canBeConsumed = true // consumable, which means it’s an "exchange" meant for consumers
         canBeResolved = false
     }
 }
 
-afterEvaluate { // necessary for version, and because the karaf plugin adds artifacts after project evaluation
+tasks.build.dependsOn 'generateKar'
+
+//afterEvaluate { // TODO Karaf plugin build kar afterEvaluate. Causes headaches because of temporal cohesion: necessary to make generateKar depend on build, but does not work for super project using this dependency configuration karafDeployment
+// necessary for version, and because the karaf plugin adds artifacts after project evaluation
 //associating the task that produces the artifact with the configuration
     artifacts {
+        // add artifacts to karafDeployment configuration
         karafDeployment(file("$buildDir/karaf/kar/${name}-${version}.kar")) { // version loads to quickly
-            //type 'kar'
+            //type 'kar' //KarafKarTask
             builtBy 'generateKar'
         }
     }
-}
+//}
 
 /**
  * Add all subprojects that should be included in this distribution here.
