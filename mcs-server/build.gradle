@@ -35,6 +35,7 @@ def karaf_expanded_dir = tar_to_basename(karaf_tar_file_name)
 def karaf_src_dir = "${project.projectDir}/karaf/"
 def karaf_tar_file = "${karaf_src_dir}/${karaf_tar_file_name}"
 def karaf_base_dir = "$project.buildDir/karaf"
+def karaf_etc_dir = "${karaf_base_dir}/etc"
 
 
 // Collect assemblies into set
@@ -67,7 +68,7 @@ dependencies {
         // this includes ":assemblies" and ":assemblies:assembly"
         it.projectDir.path.contains("assemblies:")
     }.each {
-        assemblyProducer project(path: it.path, configuration: 'karafDeployment')
+        assemblyProducer project(path: it.path, configuration: 'karafDeploy')
     }
 
     assemblyProducer project(path: ':assemblies:mcs-server-dist-allinone', configuration: 'karafDeployment')
@@ -102,7 +103,7 @@ build.dependsOn 'assembleAssemblies', setOfAssembledAssemblyFiles.collect { it.n
 
 task assembleAssemblies(group: 'karaf') {
     dependsOn 'collectAssemblies', 'expandKarafTar', 'processAssemblies', 'copyKarafResources'
-    description 'Do all tasks that create MCS distributions for each assembly.'
+    description 'Aggregate: Do all tasks that create MCS distributions for each assembly.'
     outputs.upToDateWhen { false }
 }
 
@@ -152,15 +153,15 @@ task expandKarafTar(type: DefaultTask, group: "karaf") {
 }
 
 task copyKarafResources(group: "karaf") {
-    description "Copies extra resources needed for a Karaf setup."
+    description "Copies extra resources (like etc configuration files) needed for a Karaf setup."
 
-    inputs.dir("$karaf_src_dir/resources")
+    inputs.dir("$karaf_src_dir/etc")
     outputs.dir("${karaf_base_dir}")
 
     doLast {
         copy {
-            from "$karaf_src_dir/resources"
-            into "$karaf_base_dir"
+            from "$karaf_src_dir/etc"
+            into "$karaf_etc_dir"
         }
     }
 }
@@ -212,7 +213,7 @@ task processAssemblies(group: 'karaf') {
             //            )
             //        }
             //    }
-            //}
+            //}F
 
             eachFile { FileCopyDetails fileCopyDetails ->
                 def text = """
@@ -248,12 +249,14 @@ task processAssemblies(group: 'karaf') {
         }
 
         copy {
+            // kar to deploy
             from "$assemblyPath/kar"
             into "$assemblyPath/$dist_path_component/deploy"
         }
 
         copy {
-            from "$karaf_base_dir/branding.properties"
+            // custom etc to etc
+            from "${karaf_etc_dir}"
             into "$assemblyPath/$dist_path_component/etc"
         }
         mkdir "$assemblyPath/$dist_path_component/etc/rooms"
@@ -280,7 +283,7 @@ task processAssemblies(group: 'karaf') {
 
 task makeDockerBuildDirsForRpms(group: 'docker') {
     dependsOn 'build'
-    description "Creates docker image from an RPM distribution under docker"
+    description "Creates docker image from an RPM distribution under ${buildDir}/docker"
 
     // TODO TO be clean, this needs a tuple (assembly, rpm) so that I can generate a Makefile
     def makeDockerImage = { dockerfile_template_dir, rpm, output_dir ->
@@ -293,7 +296,7 @@ task makeDockerBuildDirsForRpms(group: 'docker') {
                     if (fileCopyDetails.name == "Dockerfile") {
                         filter { it.replaceAll('@RPM@', rpm.name) }
                     }
-                    if (fileCopyDetails.name == "Makefile" || fileCopyDetails.name == "mcs_docker_service.sh" || fileCopyDetails.name == "mcs_test_helper.sh") {
+                    if (fileCopyDetails.name == "Makefile" || fileCopyDetails.name == "mcs_start_docker_service_helper.sh" || fileCopyDetails.name == "mcs_start_container_helper.sh") {
                         filter { it.replaceAll('VERSION', version) }
                         filter { it.replaceAll('URL', 'docker.uibk.ac.at:443/zid/dmlt/avportal/mcs-server') }
                     }
