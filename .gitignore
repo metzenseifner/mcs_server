@@ -1,7 +1,7 @@
 build
 gradle-wrapper.jar
 .gradle
-gradlew
+gradlew.bat
 .project
 .hgignore
 .classpath
