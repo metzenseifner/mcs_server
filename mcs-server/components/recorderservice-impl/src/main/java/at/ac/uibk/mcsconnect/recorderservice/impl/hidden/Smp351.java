@@ -179,9 +179,9 @@ public class Smp351 implements Recorder, SmpFetchable, RecordingInstanceObserver
                 t -> {
                     boolean isCancelled = t.cancel(false);// ScheduledFuture.cancel() ensures is that isDone method always return true
                     if (isCancelled) {
-                        LOGGER.info("Task %s for %s was cancelled successfully.", t, this);
+                        LOGGER.info(String.format("Task %s for %s was cancelled successfully.", t, this));
                     } else {
-                        LOGGER.error("Task %s for %s was not cancelled successfully.", t, this);
+                        LOGGER.error(String.format("Task %s for %s was not cancelled successfully.", t, this));
                     }
                 }
         );
