@@ -30,4 +30,9 @@ public class TerminalImpl implements Terminal {
     public String getId() {
         return terminalId;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s(%s, %s, %s)", this.getClass().getSimpleName(), getId(), getName(), getNetworkTarget());
+    }
 }
