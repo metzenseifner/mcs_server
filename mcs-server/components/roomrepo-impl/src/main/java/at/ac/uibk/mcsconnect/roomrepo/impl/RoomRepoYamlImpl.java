@@ -116,7 +116,7 @@ public class RoomRepoYamlImpl implements RoomRepo {
 
     @Modified
     public void modified(Map<String, ?> props) {
-        LOGGER.info(String.format("%s.modified() called", this));
+        LOGGER.debug(String.format("%s.modified() called", this));
         handleProps(props);
     }
 
@@ -143,6 +143,7 @@ public class RoomRepoYamlImpl implements RoomRepo {
         try (Stream<Path> stream = Files.list(this.roomsDir)) {
             Set<Path> roomFiles = stream
                     .filter(p -> Files.isRegularFile(p))
+                    .filter(p -> p.getFileName().toString().endsWith(".yml") || p.getFileName().toString().endsWith(".yaml"))
                     .collect(Collectors.toSet());
             LOGGER.info(String.format("Found %s rooms: %s", roomFiles.size(), roomFiles));
 
