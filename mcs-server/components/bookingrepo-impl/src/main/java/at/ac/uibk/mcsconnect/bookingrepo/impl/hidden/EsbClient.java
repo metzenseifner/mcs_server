@@ -77,7 +77,7 @@ public class EsbClient implements EsbClientCalls {
     /** Prints help metadata returned after defining member variables in {@link this#defineProperties(Map)} */
     private void printConfigurationMetadata(Map<String, String> configurationMetadata) {
         configurationMetadata.entrySet().stream()
-                .forEach(e -> LOGGER.info(CONFIG_HELP_METADATA_FORMATTER, e.getKey(), e.getValue()));
+                .forEach(e -> LOGGER.info(String.format(CONFIG_HELP_METADATA_FORMATTER, this.getClass().getSimpleName(), e.getKey(), e.getValue())));
     }
 
     @Override
