@@ -213,7 +213,7 @@ task processAssemblies(group: 'karaf') {
             //            )
             //        }
             //    }
-            //}F
+            //}
 
             eachFile { FileCopyDetails fileCopyDetails ->
                 def text = """
@@ -259,7 +259,12 @@ task processAssemblies(group: 'karaf') {
             from "${karaf_etc_dir}"
             into "$assemblyPath/$dist_path_component/etc"
         }
-        mkdir "$assemblyPath/$dist_path_component/etc/rooms"
+        mkdir "${karaf_etc_dir}/rooms"
+        copy {
+            from "${karaf_etc_dir}/rooms"
+            into "$assemblyPath/$dist_path_component/etc/rooms"
+            dirMode(0400)
+        }
         return file("$assemblyPath/$dist_path_component")
     }
 
@@ -385,6 +390,7 @@ task copyOsScripts(type: Copy, group: 'rpm') {
 // Utility
 def joinBaseToNames = { File b, String p -> new File(b, p) }
 
+/** RPMs are created at this top-level build script */
 // Create RPM Tasks based on Assembly Subprojects
 setOfAssembledAssemblyFiles.forEach {
     def assembly_dir = it
