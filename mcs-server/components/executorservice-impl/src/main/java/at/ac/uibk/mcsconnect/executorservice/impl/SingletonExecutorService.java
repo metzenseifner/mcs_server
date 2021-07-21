@@ -44,6 +44,8 @@ public class SingletonExecutorService implements McsSingletonExecutorService, Mc
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(CORE_POOL_SIZE, new ThreadFactoryImpl("mcs_scheduled_pool")); // DOes not support Core pool vs Max Pool. Only fixed number of threads.
         ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = (ScheduledThreadPoolExecutor) scheduledExecutorService; //TODO ugly cast
         scheduledThreadPoolExecutor.setRemoveOnCancelPolicy(true);
+        scheduledThreadPoolExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+        scheduledThreadPoolExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         this.scheduledExecutorService = scheduledThreadPoolExecutor;
     }
 
