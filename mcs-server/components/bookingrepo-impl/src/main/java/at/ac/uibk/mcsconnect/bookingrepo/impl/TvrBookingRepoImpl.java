@@ -4,10 +4,13 @@ import at.ac.uibk.mcsconnect.bookingrepo.api.Booking;
 import at.ac.uibk.mcsconnect.bookingrepo.api.BookingRepo;
 import at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.BookingsCache;
 import at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.EsbClientCalls;
+import at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.EsbClientDefaults;
 import at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.EsbRolesEnum;
 import at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.TvrBooking;
 import at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.TvrBookingImpl;
 import at.ac.uibk.mcsconnect.bookingrepo.impl.hidden.TvrBookings;
+import at.ac.uibk.mcsconnect.common.api.OsgiProperties;
+import at.ac.uibk.mcsconnect.common.api.OsgiProperty;
 import at.ac.uibk.mcsconnect.common.api.StrUtils;
 import at.ac.uibk.mcsconnect.functional.common.Result;
 import at.ac.uibk.mcsconnect.functional.osgi.OsgiPropertyReader;
@@ -41,6 +44,15 @@ public class TvrBookingRepoImpl implements BookingRepo {
     private static final String CFG_BOOKING_TIME_THRESHOLD = "booking.time.threshold";
     private static final String CFG_BOOKING_TIME_THRESHOLD_UNIT = "booking.time.threshold.unit";
 
+    private final OsgiProperties osgiProperties = OsgiProperties.create(
+            OsgiProperty.create(CFG_BOOKING_TIME_THRESHOLD,
+                    s -> r -> r.getAsLong(s).getOrElse(TvrBookingServiceDefaults.DEFAULT_BOOKING_TIME_THRESHOLD),
+                    this::setBookingTimeThreshold),
+            OsgiProperty.create(CFG_BOOKING_TIME_THRESHOLD_UNIT,
+                    s -> r -> r.getAsChronoUnit(s).getOrElse(TvrBookingServiceDefaults.DEFAULT_BOOKING_TIME_THRESHOLD_UNIT),
+                    this::setBookingTimeThresholdUnit)
+            );
+
     // current values
     private Long bookingTimeThreshold;
     private ChronoUnit bookingTimeThresholdUnit;
@@ -61,9 +73,7 @@ public class TvrBookingRepoImpl implements BookingRepo {
     }
 
     private void handleProperties(final Map<String,?> properties) {
-        OsgiPropertyReader reader = OsgiPropertyReader.create(properties);
-        this.bookingTimeThreshold = reader.getAsLong(CFG_BOOKING_TIME_THRESHOLD).getOrElse(TvrBookingServiceDefaults.DEFAULT_BOOKING_TIME_THRESHOLD);
-        this.bookingTimeThresholdUnit = reader.getAsChronoUnit(CFG_BOOKING_TIME_THRESHOLD_UNIT).getOrElse(TvrBookingServiceDefaults.DEFAULT_BOOKING_TIME_THRESHOLD_UNIT);
+        osgiProperties.resolve(properties, OsgiProperties.LogLevel.INFO);
     }
 
     public Set<Booking> getBookings(User user) {
@@ -128,4 +138,11 @@ public class TvrBookingRepoImpl implements BookingRepo {
                 : Result.failure(String.format("Could not find booking with id \"%s\" for user \"%s\"", id, user));
     }
 
+    public void setBookingTimeThreshold(Long bookingTimeThreshold) {
+        this.bookingTimeThreshold = bookingTimeThreshold;
+    }
+
+    public void setBookingTimeThresholdUnit(ChronoUnit bookingTimeThresholdUnit) {
+        this.bookingTimeThresholdUnit = bookingTimeThresholdUnit;
+    }
 }

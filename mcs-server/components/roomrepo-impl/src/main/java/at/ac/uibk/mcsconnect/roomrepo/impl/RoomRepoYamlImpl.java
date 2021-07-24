@@ -1,11 +1,12 @@
 package at.ac.uibk.mcsconnect.roomrepo.impl;
 
 import at.ac.uibk.mcsconnect.common.api.NetworkTargetFactory;
+import at.ac.uibk.mcsconnect.common.api.OsgiProperties;
+import at.ac.uibk.mcsconnect.common.api.OsgiProperty;
 import at.ac.uibk.mcsconnect.common.api.Views;
 import at.ac.uibk.mcsconnect.executorservice.api.McsScheduledExecutorService;
 import at.ac.uibk.mcsconnect.executorservice.api.McsSingletonExecutorService;
 import at.ac.uibk.mcsconnect.functional.common.Result;
-import at.ac.uibk.mcsconnect.functional.osgi.OsgiPropertyReader;
 import at.ac.uibk.mcsconnect.recorderservice.api.RecorderFactory;
 import at.ac.uibk.mcsconnect.roomrepo.api.Room;
 import at.ac.uibk.mcsconnect.roomrepo.api.RoomFactory;
@@ -62,6 +63,12 @@ public class RoomRepoYamlImpl implements RoomRepo {
     // defaults
     private Path DEFAULT_ROOMS_PATH = Paths.get(Optional.ofNullable(System.getenv("KARAF_ETC")).orElse("/usr/local/karaf/etc"), "rooms");
     ;
+
+    private final OsgiProperties osgiProperties = OsgiProperties.create(
+            OsgiProperty.create(CFG_ROOMS_YML_DIR,
+                    s -> r -> r.getAsPath(s).getOrElse(DEFAULT_ROOMS_PATH),
+                    this::setRoomsDir)
+    );
 
     // helpers
     private static final String SUCCESS_MESSAGE_FORMATTER = "Setting \"%s\" to: \"%s\"";
@@ -131,13 +138,13 @@ public class RoomRepoYamlImpl implements RoomRepo {
      *
      * In particular, the scheduled threads must be cancelled.
      *
-     * @param props
+     * @param properties
      */
-    private void handleProps(Map<String, ?> props) {
+    private void handleProps(Map<String, ?> properties) {
         cleanRegistry();
 
-        OsgiPropertyReader reader = OsgiPropertyReader.create(props);
-        this.roomsDir = reader.getAsPath(CFG_ROOMS_YML_DIR).getOrElse(DEFAULT_ROOMS_PATH);
+        osgiProperties.resolve(properties, OsgiProperties.LogLevel.INFO);
+
         // TODO replace all of this with a functional reader
         LOGGER.info(String.format("%s reading in rooms from: %s", this, this.roomsDir));
         try (Stream<Path> stream = Files.list(this.roomsDir)) {
@@ -292,4 +299,7 @@ public class RoomRepoYamlImpl implements RoomRepo {
         return Result.failure(String.format("Host not assigned to a room: %s", host));
     }
 
+    public void setRoomsDir(Path roomsDir) {
+        this.roomsDir = roomsDir;
+    }
 }

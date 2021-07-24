@@ -2,6 +2,8 @@ package at.ac.uibk.mcsconnect.sshsessionmanager.impl;
 
 import at.ac.uibk.mcsconnect.common.api.CancellableRunnable;
 import at.ac.uibk.mcsconnect.common.api.NetworkTarget;
+import at.ac.uibk.mcsconnect.common.api.OsgiProperties;
+import at.ac.uibk.mcsconnect.common.api.OsgiProperty;
 import at.ac.uibk.mcsconnect.common.api.Preparable;
 import at.ac.uibk.mcsconnect.common.api.PreparableCacheImpl;
 import at.ac.uibk.mcsconnect.common.api.PreparableFactory;
@@ -92,22 +94,62 @@ public class SshSessionServiceImpl implements SshSessionManagerService {
     private static final String CFG_CORE_POOL_SIZE = "ssh.core.pool.size"; // int
     private static final String CFG_KEEP_ALIVE_TIME = "ssh.keep.alive.max.time"; // int
     private static final String CFG_KEEP_ALIVE_TIME_UNIT = "ssh.keep.alive.max.time.unit"; //TimeUnit
-    private static final String CFG_THREAD_TIMEOUT = "ssh.thread.timeout";
-    private static final String CFG_THREAD_TIMEOUT_UNIT = "ssh.thread.timeout";
+    private static final String CFG_AWAIT_FOR_THREAD_TO_DIE_TIMEOUT = "ssh.thread.timeout";
+    private static final String CFG_AWAIT_FOR_THREAD_TO_DIE_TIMEOUT_UNIT = "ssh.thread.timeout";
+
+    private final OsgiProperties osgiProperties = OsgiProperties.create(
+            OsgiProperty.create(CFG_CONNECTION_TIMEOUT,
+                    s -> r -> r.getAsInt(s).getOrElse(SshSessionManagerDefaults.CONNECTION_TIMEOUT),
+                    this::setConnectionTimeout),
+            OsgiProperty.create(CFG_CONNECTION_TIMEOUT_UNIT,
+                    s -> r -> r.getAsChronoUnit(s).getOrElse(SshSessionManagerDefaults.CONNECTION_TIMEOUT_UNIT),
+                    this::setConnectionTimoutUnit,
+                    false),
+            OsgiProperty.create(CFG_ACCESS_SSH_SESSION_MAX_TRIES,
+                    s -> r -> r.getAsInt(s).getOrElse(SshSessionManagerDefaults.ACCESS_SSH_SESSION_MAX_TRIES),
+                    this::setAccessSshSessionMaxTries),
+            OsgiProperty.create(CFG_ACCESS_RETRY_SLEEP,
+                    s -> r -> r.getAsInt(s).getOrElse(SshSessionManagerDefaults.ACCESS_RETRY_SLEEP_TIME),
+                    this::setAccessSshSessionRetrySleep),
+            OsgiProperty.create(CFG_ACCESS_RETRY_SLEEP_UNIT,
+                    s -> r -> r.getAsTimeUnit(s).getOrElse(SshSessionManagerDefaults.ACCESS_RETRY_SLEEP_UNIT),
+                    this::setAccessSshSessionRetrySleepUnit),
+            OsgiProperty.create(CFG_SSH_SESSION_MAX_AGE,
+                    s -> r -> r.getAsInt(s).getOrElse(SshSessionManagerDefaults.SSH_SESSION_MAX_AGE),
+                    this::setSshSessionMaxAge),
+            OsgiProperty.create(CFG_SSH_SESSION_MAX_AGE_UNIT,
+                    s -> r -> r.getAsChronoUnit(s).getOrElse(SshSessionManagerDefaults.SSH_SESSION_MAX_AGE_UNIT),
+                    this::setSshSessionMaxAgeUnit),
+            OsgiProperty.create(CFG_CORE_POOL_SIZE,
+                    s -> r -> r.getAsInt(s).getOrElse(SshSessionManagerDefaults.CORE_POOL_SIZE),
+                    this::setCorePoolSize),
+            OsgiProperty.create(CFG_KEEP_ALIVE_TIME,
+                    s -> r -> r.getAsInt(s).getOrElse(SshSessionManagerDefaults.KEEP_ALIVE_TIME),
+                    this::setKeepAliveTime),
+            OsgiProperty.create(CFG_KEEP_ALIVE_TIME_UNIT,
+                    s -> r -> r.getAsChronoUnit(s).getOrElse(SshSessionManagerDefaults.KEEP_ALIVE_TIME_UNIT),
+                    this::setKeepAliveUnit),
+            OsgiProperty.create(CFG_AWAIT_FOR_THREAD_TO_DIE_TIMEOUT,
+                    s -> r -> r.getAsInt(s).getOrElse(SshSessionManagerDefaults.AWAIT_FOR_THREAD_TO_DIE_TIME),
+                    this::setAwaitForThreadToDieTimeout),
+            OsgiProperty.create(CFG_AWAIT_FOR_THREAD_TO_DIE_TIMEOUT_UNIT,
+                    s -> r -> r.getAsTimeUnit(s).getOrElse(SshSessionManagerDefaults.AWAIT_FOR_THREAD_TO_DIE_TIME_UNIT),
+                    this::setAwaitForThreadToDieTimeoutUnit)
+    );
 
     // defaults
     private int connectionTimeout;
     private ChronoUnit connectionTimoutUnit;
-    private int sessionMaxTries;
-    private int sessionRetrySleepTime;
-    private TimeUnit sessionRetrySleepTimeUnit;
-    private int sessionMaxAge;
-    private ChronoUnit sessionMaxAgeUnit;
+    private int accessSshSessionMaxTries;
+    private int accessSshSessionRetrySleep;
+    private TimeUnit accessSshSessionRetrySleepUnit;
+    private int sshSessionMaxAge;
+    private ChronoUnit sshSessionMaxAgeUnit;
     private int corePoolSize;
     private int keepAliveTime;
     private ChronoUnit keepAliveUnit;
-    private int threadTimeout;
-    private TimeUnit threadTimeoutUnit;
+    private int awaitForThreadToDieTimeout;
+    private TimeUnit awaitForThreadToDieTimeoutUnit;
 
     private McsSingletonExecutorService mcsSingletonExecutorService;
     private McsScheduledExecutorService mcsScheduledExecutorService;
@@ -132,29 +174,17 @@ public class SshSessionServiceImpl implements SshSessionManagerService {
                                 prepareSession,
                                 (sshChannelShellLockable) ->
                                         sshChannelShellLockable.isConnected()
-                                                && sshChannelShellLockable.isNotOlderThan(sessionMaxAge, sessionMaxAgeUnit));
-        handleConfig(reader);
+                                                && sshChannelShellLockable.isNotOlderThan(sshSessionMaxAge, sshSessionMaxAgeUnit));
+        handleConfig(properties);
     }
 
     //@Modified
     public void modified(Map<String, ?> properties) {
-        OsgiPropertyReader reader = OsgiPropertyReader.create(properties);
-        handleConfig(reader);
+        handleConfig(properties);
     }
 
-    private void handleConfig(OsgiPropertyReader reader) {
-        this.connectionTimeout = reader.getAsInt(CFG_CONNECTION_TIMEOUT).getOrElse(SshSessionManagerDefaults.CONNECTION_TIMEOUT);
-        this.connectionTimoutUnit = reader.getAsChronoUnit(CFG_CONNECTION_TIMEOUT_UNIT).getOrElse(SshSessionManagerDefaults.CONNECTION_TIMEOUT_UNIT);
-        this.sessionMaxTries = reader.getAsInt(CFG_ACCESS_SSH_SESSION_MAX_TRIES).getOrElse(SshSessionManagerDefaults.ACCESS_SSH_SESSION_MAX_TRIES);
-        this.sessionRetrySleepTime = reader.getAsInt(CFG_ACCESS_RETRY_SLEEP).getOrElse(SshSessionManagerDefaults.ACCESS_RETRY_SLEEP_TIME);
-        this.sessionRetrySleepTimeUnit = reader.getAsTimeUnit(CFG_ACCESS_RETRY_SLEEP_UNIT).getOrElse(SshSessionManagerDefaults.ACCESS_RETRY_SLEEP_UNIT);
-        this.sessionMaxAge = reader.getAsInt(CFG_SSH_SESSION_MAX_AGE).getOrElse(SshSessionManagerDefaults.SSH_SESSION_MAX_AGE);
-        this.sessionMaxAgeUnit = reader.getAsChronoUnit(CFG_SSH_SESSION_MAX_AGE_UNIT).getOrElse(SshSessionManagerDefaults.SSH_SESSION_MAX_AGE_UNIT);
-        this.corePoolSize = reader.getAsInt(CFG_CORE_POOL_SIZE).getOrElse(SshSessionManagerDefaults.CORE_POOL_SIZE);
-        this.keepAliveTime = reader.getAsInt(CFG_KEEP_ALIVE_TIME).getOrElse(SshSessionManagerDefaults.KEEP_ALIVE_TIME);
-        this.keepAliveUnit = reader.getAsChronoUnit(CFG_KEEP_ALIVE_TIME_UNIT).getOrElse(SshSessionManagerDefaults.KEEP_ALIVE_TIME_UNIT);
-        this.threadTimeout = reader.getAsInt(CFG_THREAD_TIMEOUT).getOrElse(SshSessionManagerDefaults.AWAIT_FOR_THREAD_TO_DIE_TIME);
-        this.threadTimeoutUnit = reader.getAsTimeUnit(CFG_THREAD_TIMEOUT_UNIT).getOrElse(SshSessionManagerDefaults.AWAIT_FOR_THREAD_TO_DIE_TIME_UNIT);
+    private void handleConfig(Map<String, ?> properties) {
+        osgiProperties.resolve(properties, OsgiProperties.LogLevel.INFO);
     }
 
     /**
@@ -173,8 +203,6 @@ public class SshSessionServiceImpl implements SshSessionManagerService {
         }
     };
 
-
-
     // This cache provides one session per network target. Blocks until released. It is the main cache. THE CONDITIONAL IS THE FIRST LINE OF DEFENSE FOR THE CACHE (and prob makes defensive code against disconnections in SshChannelShellLockable obsolete)
      //private final Preparable<NetworkTarget, SshChannelShellLockable> serialAccessSessionCache =
      //        new PreparableCache<>(
@@ -182,8 +210,6 @@ public class SshSessionServiceImpl implements SshSessionManagerService {
      //                (sshChannelShellLockable) ->
      //                        sshChannelShellLockable.isConnected()
      //                                && sshChannelShellLockable.isNotOlderThan(sessionMaxAge, sessionMaxAgeUnit));
-
-
 
     Map<CancellableRunnable, Future<?>> cancellableFutures = new HashMap<>();
 
@@ -257,7 +283,7 @@ public class SshSessionServiceImpl implements SshSessionManagerService {
             for (Future task : cancellableFutures.values()) {
                 task.cancel(true);
             }
-            if (!mcsSingletonExecutorService.getExecutorService().awaitTermination(this.threadTimeout, this.threadTimeoutUnit) || !mcsScheduledExecutorService.getScheduledExecutorService().awaitTermination(this.threadTimeout, this.threadTimeoutUnit)) {
+            if (!mcsSingletonExecutorService.getExecutorService().awaitTermination(this.awaitForThreadToDieTimeout, this.awaitForThreadToDieTimeoutUnit) || !mcsScheduledExecutorService.getScheduledExecutorService().awaitTermination(this.awaitForThreadToDieTimeout, this.awaitForThreadToDieTimeoutUnit)) {
                 LOGGER.warn("{} could not properly shutdown {} or {}. Forced a shutdown of all threads occurred.", this, mcsSingletonExecutorService.getExecutorService(), mcsScheduledExecutorService.getScheduledExecutorService());
                 mcsScheduledExecutorService.getScheduledExecutorService().shutdownNow();
                 mcsSingletonExecutorService.getExecutorService().shutdownNow();
@@ -301,14 +327,14 @@ public class SshSessionServiceImpl implements SshSessionManagerService {
         do {
             TRY_COUNT++;
             if (sshSessionLockableResult.isSuccess()) {
-                LOGGER.debug(String.format("%s.access() succeeded connecting to %s. Try %s of %s.", this, networkTargetUserPass, TRY_COUNT, this.sessionMaxTries));
+                LOGGER.debug(String.format("%s.access() succeeded connecting to %s. Try %s of %s.", this, networkTargetUserPass, TRY_COUNT, this.accessSshSessionMaxTries));
                 break;
             }
-            LOGGER.debug(String.format("%s.access(%s) failed on attempt %s of %s. Retry after %s milliseconds.", this, networkTargetUserPass, TRY_COUNT, this.sessionMaxTries, this.sessionRetrySleepTime, this.sessionRetrySleepTimeUnit));
+            LOGGER.debug(String.format("%s.access(%s) failed on attempt %s of %s. Retry after %s milliseconds.", this, networkTargetUserPass, TRY_COUNT, this.accessSshSessionMaxTries, this.accessSshSessionRetrySleep, this.accessSshSessionRetrySleepUnit));
             //Thread.sleep(ACCESS_RETRY_SLEEP_MILLISECONDS); // 5 seconds in milliseconds
-            this.sessionRetrySleepTimeUnit.sleep(this.sessionRetrySleepTime);
+            this.accessSshSessionRetrySleepUnit.sleep(this.accessSshSessionRetrySleep);
             sshSessionLockableResult = serialAccessSessionCache.prepare(networkTargetUserPass);
-        } while (TRY_COUNT < this.sessionMaxTries);
+        } while (TRY_COUNT < this.accessSshSessionMaxTries);
         try {
 
 
@@ -420,4 +446,51 @@ public class SshSessionServiceImpl implements SshSessionManagerService {
         return mcsScheduledExecutorService.getScheduledExecutorService();
     }
 
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public void setConnectionTimoutUnit(ChronoUnit connectionTimoutUnit) {
+        this.connectionTimoutUnit = connectionTimoutUnit;
+    }
+
+    public void setAccessSshSessionMaxTries(int accessSshSessionMaxTries) {
+        this.accessSshSessionMaxTries = accessSshSessionMaxTries;
+    }
+
+    public void setAccessSshSessionRetrySleep(int accessSshSessionRetrySleep) {
+        this.accessSshSessionRetrySleep = accessSshSessionRetrySleep;
+    }
+
+    public void setAccessSshSessionRetrySleepUnit(TimeUnit accessSshSessionRetrySleepUnit) {
+        this.accessSshSessionRetrySleepUnit = accessSshSessionRetrySleepUnit;
+    }
+
+    public void setSshSessionMaxAge(int sshSessionMaxAge) {
+        this.sshSessionMaxAge = sshSessionMaxAge;
+    }
+
+    public void setSshSessionMaxAgeUnit(ChronoUnit sshSessionMaxAgeUnit) {
+        this.sshSessionMaxAgeUnit = sshSessionMaxAgeUnit;
+    }
+
+    public void setCorePoolSize(int corePoolSize) {
+        this.corePoolSize = corePoolSize;
+    }
+
+    public void setKeepAliveTime(int keepAliveTime) {
+        this.keepAliveTime = keepAliveTime;
+    }
+
+    public void setKeepAliveUnit(ChronoUnit keepAliveUnit) {
+        this.keepAliveUnit = keepAliveUnit;
+    }
+
+    public void setAwaitForThreadToDieTimeout(int awaitForThreadToDieTimeout) {
+        this.awaitForThreadToDieTimeout = awaitForThreadToDieTimeout;
+    }
+
+    public void setAwaitForThreadToDieTimeoutUnit(TimeUnit awaitForThreadToDieTimeoutUnit) {
+        this.awaitForThreadToDieTimeoutUnit = awaitForThreadToDieTimeoutUnit;
+    }
 }

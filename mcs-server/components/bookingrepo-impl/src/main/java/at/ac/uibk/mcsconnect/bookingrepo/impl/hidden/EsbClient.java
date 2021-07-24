@@ -1,5 +1,7 @@
 package at.ac.uibk.mcsconnect.bookingrepo.impl.hidden;
 
+import at.ac.uibk.mcsconnect.common.api.OsgiProperties;
+import at.ac.uibk.mcsconnect.common.api.OsgiProperty;
 import at.ac.uibk.mcsconnect.functional.osgi.OsgiPropertyReader;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
 import org.osgi.service.component.annotations.Activate;
@@ -12,7 +14,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.UriBuilder;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 
 @Component(
@@ -27,6 +28,19 @@ public class EsbClient implements EsbClientCalls {
     private static final String CFG_ESB_USERNAME = "esb.username";
     private static final String CFG_ESB_PASSWORD = "esb.password";
     private static final String CFG_ESB_URL = "esb.url";
+
+    private final OsgiProperties osgiProperties = OsgiProperties.create(
+        OsgiProperty.create(CFG_ESB_USERNAME,
+                s -> r -> r.getAsString(s).getOrElse(EsbClientDefaults.DEFAULT_ESB_USERNAME),
+                this::setEsbUsername),
+        OsgiProperty.create(CFG_ESB_PASSWORD,
+                s -> r -> r.getAsString(s).getOrElse(EsbClientDefaults.DEFAULT_ESB_PASSWORD),
+                this::setEsbPassword,
+                false),
+        OsgiProperty.create(CFG_ESB_URL,
+                s -> r -> r.getAsURI(s).getOrElse(EsbClientDefaults.DEFAULT_ESB_URL),
+                this::setEsbUri)
+    );
 
     // config
     private String esbUsername;
@@ -49,35 +63,18 @@ public class EsbClient implements EsbClientCalls {
 
     /** Update OSGI config */
     private void handleProperties(Map<String,?> properties) {
-        Map<String, String> configurationMetadata = defineProperties(properties);
-        printConfigurationMetadata(configurationMetadata);
+        defineProperties(properties);
     }
 
     /**
-     * Sets member variables and returns metadata about the current state.
+     * Sets member variables and handles optional logging.
      *
      * Do not call me directly. Should be delegated to by {@link this#handleProperties(Map)}.
      *
      * @param properties OSGI properties map
-     * @return {@link Map<String, String>} of config metadata
      */
-    private Map<String, String> defineProperties(Map<String,?> properties) {
-        OsgiPropertyReader reader = OsgiPropertyReader.create(properties);
-        this.esbUsername = reader.getAsString(CFG_ESB_USERNAME).getOrElse(EsbClientDefaults.DEFAULT_ESB_USERNAME);
-        this.esbPassword = reader.getAsString(CFG_ESB_PASSWORD).getOrElse(EsbClientDefaults.DEFAULT_ESB_PASSWORD);
-        this.esbUri = reader.getAsURI(CFG_ESB_URL).getOrElse(EsbClientDefaults.DEFAULT_ESB_URL);
-
-        Map<String, String> configMetadata = new HashMap<>();
-        configMetadata.put("esbUsername", this.esbUsername);
-        configMetadata.put("esbPassword", this.esbPassword);
-        configMetadata.put("esbUri", this.esbUri.toString());
-        return configMetadata;
-    }
-
-    /** Prints help metadata returned after defining member variables in {@link this#defineProperties(Map)} */
-    private void printConfigurationMetadata(Map<String, String> configurationMetadata) {
-        configurationMetadata.entrySet().stream()
-                .forEach(e -> LOGGER.info(String.format(CONFIG_HELP_METADATA_FORMATTER, this.getClass().getSimpleName(), e.getKey(), e.getValue())));
+    private void defineProperties(Map<String,?> properties) {
+        osgiProperties.resolve(properties, OsgiProperties.LogLevel.INFO);
     }
 
     @Override
@@ -99,6 +96,18 @@ public class EsbClient implements EsbClientCalls {
             TvrBookings tvrBookings = esb.fetchBookingsForUserId(userId, roles, bookingsMinDate, bookingsMaxDate);
             LOGGER.info(String.format("%s.fetchBookingsForUserId(userId: %s, roles: %s, bookingsMinDate: %s, bookingsMaxDate: %s) returning: %s", this, userId, roles, bookingsMinDate, bookingsMaxDate, tvrBookings));
             return tvrBookings;
+    }
+
+    public void setEsbUsername(String value) {
+        this.esbUsername = value;
+    }
+
+    public void setEsbPassword(String value) {
+        this.esbPassword = value;
+    }
+
+    public void setEsbUri(URI value) {
+        this.esbUri = value;
     }
 
     @Override
