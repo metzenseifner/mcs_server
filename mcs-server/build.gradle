@@ -259,11 +259,9 @@ task processAssemblies(group: 'karaf') {
             from "${karaf_etc_dir}"
             into "$assemblyPath/$dist_path_component/etc"
         }
-        mkdir "${karaf_etc_dir}/rooms"
         copy {
             from "${karaf_etc_dir}/rooms"
             into "$assemblyPath/$dist_path_component/etc/rooms"
-            dirMode(0400)
         }
         return file("$assemblyPath/$dist_path_component")
     }
@@ -456,6 +454,12 @@ setOfAssembledAssemblyFiles.forEach {
                 from(new File(assembly_base, 'etc')) {
                     fileType CONFIG | NOREPLACE
                     into 'etc'
+                    eachFile { FileCopyDetails fileCopyDetails ->
+                        if (fileCopyDetails.name.startsWith('rooms')) {
+                            dirMode 0500
+                            fileMode 0400
+                        }
+                    }
                 }
 
                 from(new File(assembly_base, 'bin')) {
