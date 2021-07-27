@@ -29,7 +29,7 @@ evaluationDependsOnChildren()
 def tar_to_basename = { it.replaceFirst('\\.tar\\.gz', '') }
 
 // Makes sense to contain projects here
-def karaf_version = "4.2.11"
+def karaf_version = "4.2.10"
 def karaf_tar_file_name = "apache-karaf-${karaf_version}.tar.gz"
 def karaf_expanded_dir = tar_to_basename(karaf_tar_file_name)
 def karaf_src_dir = "${project.projectDir}/karaf/"
